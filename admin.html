@@ -182,7 +182,7 @@ tr:hover td { background: #fdf9f6; }
         <button class="filter-btn" onclick="filterReservations('pending', this)">예약 대기</button>
         <button class="filter-btn" onclick="filterReservations('cancel_requested', this)">취소 요청</button>
         <button class="filter-btn" onclick="filterReservations('cancelled', this)">취소됨</button>
-        <button class="filter-btn add-btn" onclick="openAddModal()" style="margin-left:auto;background:var(--rose);color:#fff;border-color:var(--rose);">+ 전화예약 추가</button>
+        <button class="filter-btn add-btn" onclick="openAddModal()" style="margin-left:auto;background:var(--rose);color:#fff;border-color:var(--rose);font-size:1.1rem;padding:6px 18px;">+</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -209,20 +209,19 @@ tr:hover td { background: #fdf9f6; }
   </div>
 </div>
 
-<!-- 전화예약 추가 모달 -->
+<!-- 예약 추가 모달 -->
 <div class="modal-bg" id="addModalBg">
   <div class="modal">
-    <h2>📞 전화예약 추가</h2>
-    <div class="field"><label>이름</label><input type="text" id="aN" placeholder="고객 이름" /></div>
-    <div class="field"><label>연락처</label><input type="tel" id="aPh" placeholder="010-0000-0000" /></div>
+    <h2>예약 추가</h2>
+    <div class="field"><label>이름</label><input type="text" id="aN" placeholder="미입력 가능" /></div>
+    <div class="field"><label>연락처</label><input type="tel" id="aPh" placeholder="미입력 가능" /></div>
     <div class="field"><label>시술</label>
       <select id="aSv">
         <option>눈썹문신</option><option>피부미용</option><option>염색</option><option>기타 상담</option>
       </select>
     </div>
-    <div class="field"><label>희망 날짜</label><input type="date" id="aDt" /></div>
-    <div class="field"><label>시술 시간 <span style="font-size:.75rem;color:#aaa;font-weight:400;">· 확정 시간 입력</span></label><input type="time" id="aTm" /></div>
-    <div class="field"><label>메모 <span style="font-size:.75rem;color:#aaa;font-weight:400;">· 선택사항</span></label><input type="text" id="aMemo" placeholder="예: 단골 고객, 재시술 등" /></div>
+    <div class="field"><label>날짜</label><input type="date" id="aDt" /></div>
+    <div class="field"><label>시간</label><input type="time" id="aTm" /></div>
     <div class="modal-btns">
       <button class="btn-close" onclick="closeAddModal()">닫기</button>
       <button class="btn-save" onclick="submitAdd(false)">대기로 저장</button>
@@ -433,7 +432,6 @@ function openAddModal() {
   document.getElementById('aSv').value = '눈썹문신';
   document.getElementById('aDt').value = '';
   document.getElementById('aTm').value = '';
-  document.getElementById('aMemo').value = '';
   document.getElementById('addModalBg').classList.add('show');
 }
 function closeAddModal() { document.getElementById('addModalBg').classList.remove('show'); }
@@ -444,11 +442,10 @@ async function submitAdd(isConfirm) {
   const service = document.getElementById('aSv').value;
   const date = document.getElementById('aDt').value;
   const time = document.getElementById('aTm').value;
-  const memo = document.getElementById('aMemo').value.trim();
-  if (!name || !phone || !date) { alert('이름, 연락처, 날짜는 필수입니다.'); return; }
+  if (!date) { alert('날짜는 입력해 주세요.'); return; }
   const now = new Date();
-  const code = `CALL${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
-  const body = { code, name, phone, service, date, time: time || null, memo: memo || null, status: isConfirm ? 'confirmed' : 'pending' };
+  const code = `ADD${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+  const body = { code, name: name || '미입력', phone: phone || '미입력', service, date, time: time || null, status: isConfirm ? 'confirmed' : 'pending' };
   try {
     const result = await sbFetch('reservations', { method: 'POST', headers: { 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
     const newRes = Array.isArray(result) ? result[0] : body;
