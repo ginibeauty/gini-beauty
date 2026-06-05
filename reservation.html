@@ -141,6 +141,7 @@ body { font-family: var(--sans); background: #FAF6F0 !important; color: #2B2521 
       <div class="result-card__row"><span class="label">연락처</span><span class="value" id="rPhone"></span></div>
       <div class="result-card__row"><span class="label">시술</span><span class="value" id="rService"></span></div>
       <div class="result-card__row"><span class="label">희망 날짜</span><span class="value" id="rDate"></span></div>
+      <div class="result-card__row"><span class="label">신청일시</span><span class="value" id="rCreatedAt"></span></div>
       <div class="result-card__row"><span class="label">예약 코드</span><span class="value" id="rCode"></span></div>
 
       <div class="result-card__actions" id="actionArea"></div>
@@ -264,6 +265,7 @@ function renderCard(r) {
   document.getElementById('rPhone').textContent = r.phone;
   document.getElementById('rService').textContent = r.service;
   document.getElementById('rDate').textContent = formatDate(r.date);
+  document.getElementById('rCreatedAt').textContent = r.created_at ? new Date(r.created_at).toLocaleString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
   document.getElementById('rCode').textContent = r.code;
 
   const badge = document.getElementById('statusBadge');

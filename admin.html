@@ -185,7 +185,7 @@ tr:hover td { background: #fdf9f6; }
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>예약코드</th><th>이름</th><th>연락처</th><th>시술</th><th>날짜</th><th>상태</th><th>관리</th></tr></thead>
+          <thead><tr><th>예약코드</th><th>이름</th><th>연락처</th><th>시술</th><th>희망날짜</th><th>신청일</th><th>상태</th><th>관리</th></tr></thead>
           <tbody id="reservationTable"></tbody>
         </table>
       </div>
@@ -325,8 +325,8 @@ function renderDashboard() {
   const reqs = allReservations.filter(r => r.status === 'cancel_requested');
   document.getElementById('cancelRequests').innerHTML = reqs.length === 0
     ? '<p class="empty-msg">취소 요청이 없습니다.</p>'
-    : `<div class="table-wrap"><table><thead><tr><th>이름</th><th>연락처</th><th>시술</th><th>날짜</th><th>처리</th></tr></thead><tbody>${
-        reqs.map(r => `<tr><td>${r.name}</td><td>${r.phone}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td><td>
+    : `<div class="table-wrap"><table><thead><tr><th>이름</th><th>연락처</th><th>시술</th><th>날짜</th><th>신청일</th><th>처리</th></tr></thead><tbody>${
+        reqs.map(r => `<tr><td>${r.name}</td><td>${r.phone}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td><td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td><td>
           <button class="action-btn cancel" onclick="confirmCancel('${r.code}')">취소 확정</button>
           <button class="action-btn edit" onclick="rejectCancel('${r.code}')">요청 거절</button>
         </td></tr>`).join('')
@@ -336,8 +336,8 @@ function renderDashboard() {
   const recent = allReservations.slice(0, 5);
   document.getElementById('recentList').innerHTML = recent.length === 0
     ? '<p class="empty-msg">예약이 없습니다.</p>'
-    : `<div class="table-wrap"><table><thead><tr><th>이름</th><th>시술</th><th>날짜</th><th>상태</th></tr></thead><tbody>${
-        recent.map(r => `<tr><td>${r.name}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td><td>${statusLabel(r.status)}</td></tr>`).join('')
+    : `<div class="table-wrap"><table><thead><tr><th>이름</th><th>시술</th><th>날짜</th><th>신청일</th><th>상태</th></tr></thead><tbody>${
+        recent.map(r => `<tr><td>${r.name}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td><td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td><td>${statusLabel(r.status)}</td></tr>`).join('')
       }</tbody></table></div>`;
 
   /* 취소요청 뱃지 */
@@ -349,10 +349,11 @@ function renderDashboard() {
 function renderTable(filter) {
   const data = filter === 'all' ? allReservations : allReservations.filter(r => r.status === filter);
   document.getElementById('reservationTable').innerHTML = data.length === 0
-    ? `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-soft);">예약이 없습니다.</td></tr>`
+    ? `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--ink-soft);">예약이 없습니다.</td></tr>`
     : data.map(r => `<tr>
         <td style="font-size:.78rem;color:var(--ink-soft);">${r.code}</td>
         <td>${r.name}</td><td>${r.phone}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td>
+        <td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td>
         <td>${statusLabel(r.status)}</td>
         <td>
           ${r.status !== 'cancelled' ? `<button class="action-btn edit" onclick="openModal('${r.code}')">수정</button>` : ''}
