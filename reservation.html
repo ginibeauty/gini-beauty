@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light only" />
+<title>예약 조회 | 지니뷰티</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+<style>
+:root {
+  color-scheme: light only;
+  --cream:      #FAF6F0;
+  --cream-deep: #F2EBE1;
+  --white:      #FFFFFF;
+  --ink:        #2B2521;
+  --ink-soft:   #6E635A;
+  --taupe:      #B7A793;
+  --rose:       #C08C7E;
+  --rose-deep:  #A6715F;
+  --line:       #E7DECF;
+  --serif: "Playfair Display", serif;
+  --sans:  "Noto Sans KR", sans-serif;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #FAF6F0 !important; }
+body { font-family: var(--sans); background: #FAF6F0 !important; color: #2B2521 !important; min-height: 100vh; }
+
+/* 네비 */
+.nav { background: var(--white); border-bottom: 1px solid var(--line); padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; }
+.nav__logo { font-family: var(--serif); font-size: 1.3rem; text-decoration: none; color: var(--ink); }
+.nav__logo span { color: var(--rose); font-style: italic; }
+.nav__back { font-size: 0.85rem; color: var(--ink-soft); text-decoration: none; display: flex; align-items: center; gap: 6px; }
+.nav__back:hover { color: var(--rose); }
+
+/* 메인 */
+.wrap { max-width: 560px; margin: 0 auto; padding: 40px 20px 80px; }
+.page-title { font-family: var(--serif); font-size: 2rem; font-weight: 500; margin-bottom: 8px; }
+.page-sub { color: var(--ink-soft); font-size: 0.9rem; margin-bottom: 40px; }
+
+/* 탭 */
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--line); margin-bottom: 32px; }
+.tab { flex: 1; padding: 12px; text-align: center; font-size: 0.9rem; font-weight: 500; cursor: pointer; color: var(--ink-soft); background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .2s; }
+.tab.active { color: var(--rose); border-bottom-color: var(--rose); }
+
+/* 패널 */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* 폼 */
+.field { margin-bottom: 20px; }
+.field label { display: block; font-size: 0.82rem; font-weight: 500; margin-bottom: 8px; }
+.field input { width: 100%; padding: 13px 16px; border: 1.5px solid var(--line); border-radius: 12px; font-family: var(--sans); font-size: 0.95rem; color: var(--ink); background: var(--white); outline: none; transition: border-color .2s; }
+.field input:focus { border-color: var(--rose); }
+.btn { width: 100%; padding: 15px; border: none; border-radius: 999px; font-family: var(--sans); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: filter .2s; }
+.btn-primary { background: var(--rose); color: #fff; }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+
+/* 결과 카드 */
+.result-card { display: none; background: var(--white); border: 1.5px solid var(--line); border-radius: 20px; padding: 28px 24px; margin-top: 28px; }
+.result-card.show { display: block; }
+.result-card__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.result-card__title { font-family: var(--serif); font-size: 1.1rem; }
+.status-badge { font-size: 0.75rem; font-weight: 500; padding: 4px 12px; border-radius: 999px; }
+.status-badge.pending { background: #FFF3E0; color: #E65100; }
+.status-badge.confirmed { background: #E8F5E9; color: #2E7D32; }
+.status-badge.cancelled { background: #FFEBEE; color: #C62828; }
+.result-card__row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f5f0eb; font-size: 0.9rem; }
+.result-card__row:last-of-type { border-bottom: none; }
+.result-card__row .label { color: var(--ink-soft); }
+.result-card__row .value { font-weight: 500; }
+.result-card__actions { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+.btn-edit { background: var(--cream-deep); color: var(--ink); }
+.btn-cancel { background: none; border: 1.5px solid #e0c0c0; color: #C62828; border-radius: 999px; padding: 14px; font-family: var(--sans); font-size: 0.9rem; cursor: pointer; }
+.btn-cancel:hover { background: #fff5f5; }
+.deadline-notice { font-size: 0.78rem; color: var(--ink-soft); text-align: center; margin-top: 8px; }
+.deadline-over { font-size: 0.82rem; color: #C62828; background: #fff5f5; border-radius: 10px; padding: 12px; text-align: center; margin-top: 16px; }
+
+/* 수정 폼 */
+.edit-form { display: none; margin-top: 24px; background: var(--cream); border-radius: 16px; padding: 20px; }
+.edit-form.show { display: block; }
+.edit-form .field { margin-bottom: 16px; }
+.edit-form .field:last-child { margin-bottom: 0; }
+.edit-btns { display: flex; gap: 10px; margin-top: 16px; }
+.edit-btns .btn { flex: 1; padding: 12px; }
+.btn-outline { background: none; border: 1.5px solid var(--line); color: var(--ink); }
+
+/* 전화번호 조회 결과 */
+.phone-result { display: none; margin-top: 24px; }
+.phone-result.show { display: block; }
+.phone-result__title { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 12px; }
+.code-item { background: var(--white); border: 1.5px solid var(--line); border-radius: 12px; padding: 16px 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.code-item__code { font-size: 1.1rem; font-weight: 700; color: var(--rose); letter-spacing: 2px; }
+.code-item__info { font-size: 0.8rem; color: var(--ink-soft); margin-top: 2px; }
+.code-item__use { font-size: 0.8rem; color: var(--rose); text-decoration: none; font-weight: 500; }
+.code-item__use:hover { text-decoration: underline; }
+
+/* 메시지 */
+.msg { text-align: center; padding: 24px; color: var(--ink-soft); font-size: 0.9rem; }
+.msg.error { color: #C62828; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="nav__logo">Genie<span>Beauty</span></a>
+  <a href="index.html" class="nav__back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    홈으로
+  </a>
+</nav>
+
+<div class="wrap">
+  <h1 class="page-title">예약 조회</h1>
+  <p class="page-sub">예약 코드 또는 연락처로 예약 내역을 확인하세요.</p>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('code')">예약 코드로 조회</button>
+    <button class="tab" onclick="switchTab('phone')">연락처로 코드 찾기</button>
+  </div>
+
+  <!-- 패널 1: 코드 조회 -->
+  <div class="panel active" id="panel-code">
+    <div class="field">
+      <label for="codeInput">예약 코드 12자리</label>
+      <input type="text" id="codeInput" placeholder="예) 202606061234" maxlength="12" inputmode="numeric" />
+    </div>
+    <button class="btn btn-primary" id="searchBtn" onclick="searchByCode()">예약 조회하기</button>
+
+    <!-- 결과 카드 -->
+    <div class="result-card" id="resultCard">
+      <div class="result-card__header">
+        <span class="result-card__title">예약 내역</span>
+        <span class="status-badge" id="statusBadge"></span>
+      </div>
+      <div class="result-card__row"><span class="label">이름</span><span class="value" id="rName"></span></div>
+      <div class="result-card__row"><span class="label">연락처</span><span class="value" id="rPhone"></span></div>
+      <div class="result-card__row"><span class="label">시술</span><span class="value" id="rService"></span></div>
+      <div class="result-card__row"><span class="label">희망 날짜</span><span class="value" id="rDate"></span></div>
+      <div class="result-card__row"><span class="label">예약 코드</span><span class="value" id="rCode"></span></div>
+
+      <div class="result-card__actions" id="actionArea"></div>
+
+      <!-- 수정 폼 -->
+      <div class="edit-form" id="editForm">
+        <div class="field">
+          <label>이름</label>
+          <input type="text" id="editName" />
+        </div>
+        <div class="field">
+          <label>연락처</label>
+          <input type="tel" id="editPhone" />
+        </div>
+        <div class="field">
+          <label>시술 선택</label>
+          <select id="editService" style="width:100%;padding:13px 16px;border:1.5px solid var(--line);border-radius:12px;font-family:var(--sans);font-size:0.95rem;background:var(--white);outline:none;">
+            <option>눈썹문신</option>
+            <option>피부미용</option>
+            <option>염색</option>
+            <option>기타 상담</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>희망 날짜</label>
+          <input type="date" id="editDate" />
+        </div>
+        <div class="edit-btns">
+          <button class="btn btn-outline" onclick="closeEdit()">취소</button>
+          <button class="btn btn-primary" onclick="submitEdit()">수정 완료</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 패널 2: 전화번호 조회 -->
+  <div class="panel" id="panel-phone">
+    <div class="field">
+      <label for="phoneInput">예약 시 등록한 연락처</label>
+      <input type="tel" id="phoneInput" placeholder="010-0000-0000" maxlength="13" />
+    </div>
+    <button class="btn btn-primary" onclick="searchByPhone()">코드 찾기</button>
+
+    <div class="phone-result" id="phoneResult"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://dxnhcntvckhexyresxsv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_5fimW-Tc9PgTXt63n8ZQ8g_6QrEP_SG';
+const WEB3FORMS_KEY = '6114541f-3206-4da6-8c5b-606326dd5bfe';
+
+let currentReservation = null;
+
+/* ───── 공통 유틸 ───── */
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  const [y, m, d] = dateStr.split('-');
+  return `${y}년 ${m}월 ${d}일`;
+}
+
+function canModify(dateStr) {
+  const target = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = (target - today) / (1000 * 60 * 60 * 24);
+  return diff >= 5;
+}
+
+/* ───── 탭 전환 ───── */
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (tab === 'code' && i === 0) || (tab === 'phone' && i === 1));
+  });
+  document.getElementById('panel-code').classList.toggle('active', tab === 'code');
+  document.getElementById('panel-phone').classList.toggle('active', tab === 'phone');
+}
+
+/* ───── 코드로 조회 ───── */
+async function searchByCode() {
+  const code = document.getElementById('codeInput').value.trim();
+  if (!code || code.length < 10) { alert('예약 코드를 정확히 입력해 주세요.'); return; }
+
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.textContent = '조회 중...';
+
+  try {
+    const data = await sbFetch(`reservations?code=eq.${code}&select=*`);
+    if (!data || data.length === 0) {
+      document.getElementById('resultCard').classList.remove('show');
+      alert('해당 예약 코드를 찾을 수 없습니다.');
+      return;
+    }
+    currentReservation = data[0];
+    renderCard(currentReservation);
+  } catch {
+    alert('조회 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+  } finally {
+    btn.disabled = false; btn.textContent = '예약 조회하기';
+  }
+}
+
+/* ───── 카드 렌더링 ───── */
+function renderCard(r) {
+  document.getElementById('rName').textContent = r.name;
+  document.getElementById('rPhone').textContent = r.phone;
+  document.getElementById('rService').textContent = r.service;
+  document.getElementById('rDate').textContent = formatDate(r.date);
+  document.getElementById('rCode').textContent = r.code;
+
+  const badge = document.getElementById('statusBadge');
+  if (r.status === 'confirmed') {
+    badge.textContent = '예약 확정'; badge.className = 'status-badge confirmed';
+  } else if (r.status === 'cancelled') {
+    badge.textContent = '취소됨'; badge.className = 'status-badge cancelled';
+  } else if (r.status === 'cancel_requested') {
+    badge.textContent = '취소 요청 중'; badge.className = 'status-badge pending';
+  } else {
+    badge.textContent = '예약 대기'; badge.className = 'status-badge pending';
+  }
+
+  const actionArea = document.getElementById('actionArea');
+  actionArea.innerHTML = '';
+  document.getElementById('editForm').classList.remove('show');
+
+  if (r.status === 'confirmed') {
+    actionArea.innerHTML = '<p class="deadline-over" style="background:#E8F5E9;color:#2E7D32;">✅ 예약이 확정되었습니다. 변경이 필요하시면 직접 연락해 주세요.</p>';
+  } else if (r.status === 'cancelled') {
+    actionArea.innerHTML = '<p class="deadline-over">취소된 예약입니다.</p>';
+  } else if (r.status === 'cancel_requested') {
+    actionArea.innerHTML = '<p class="deadline-over">취소 요청이 접수되었습니다. 사장님 확인 후 처리됩니다.</p>';
+  } else if (!canModify(r.date)) {
+    actionArea.innerHTML = '<p class="deadline-over">⚠️ 시술일 5일 이내로 수정 및 취소가 불가합니다.<br>변경이 필요하시면 직접 연락해 주세요.</p>';
+  } else {
+    actionArea.innerHTML = `
+      <button class="btn btn-edit" onclick="openEdit()">예약 수정하기</button>
+      <button class="btn-cancel" onclick="requestCancel()">예약 취소 요청</button>
+      <p class="deadline-notice">시술일 5일 전까지 수정·취소 가능합니다.</p>
+    `;
+  }
+
+  document.getElementById('resultCard').classList.add('show');
+}
+
+/* ───── 수정 ───── */
+function openEdit() {
+  const r = currentReservation;
+  document.getElementById('editName').value = r.name;
+  document.getElementById('editPhone').value = r.phone;
+  document.getElementById('editService').value = r.service;
+  document.getElementById('editDate').value = r.date;
+  const dateInput = document.getElementById('editDate');
+  const today = new Date();
+  today.setDate(today.getDate() + 5);
+  dateInput.min = today.toISOString().split('T')[0];
+  document.getElementById('editForm').classList.add('show');
+}
+
+function closeEdit() {
+  document.getElementById('editForm').classList.remove('show');
+}
+
+async function submitEdit() {
+  const name = document.getElementById('editName').value.trim();
+  const phone = document.getElementById('editPhone').value.trim();
+  const service = document.getElementById('editService').value;
+  const date = document.getElementById('editDate').value;
+
+  if (!name || !phone || !service || !date) { alert('모든 항목을 입력해 주세요.'); return; }
+
+  try {
+    await sbFetch(`reservations?code=eq.${currentReservation.code}`, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({ name, phone, service, date }),
+    });
+
+    /* 사장님 이메일 알림 */
+    await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        access_key: WEB3FORMS_KEY,
+        subject: `[지니뷰티] 예약 수정 알림 - ${name} 고객님`,
+        예약코드: currentReservation.code,
+        이름: name, 연락처: phone, 시술: service, 날짜: date,
+      }),
+    });
+
+    currentReservation = { ...currentReservation, name, phone, service, date };
+    renderCard(currentReservation);
+    alert('예약이 수정되었습니다.');
+  } catch {
+    alert('수정 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+}
+
+/* ───── 취소 요청 ───── */
+async function requestCancel() {
+  if (!confirm('예약 취소를 요청하시겠습니까?\n사장님 확인 후 취소가 완료됩니다.')) return;
+
+  try {
+    await sbFetch(`reservations?code=eq.${currentReservation.code}`, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({ status: 'cancel_requested' }),
+    });
+
+    /* 사장님 이메일 — 취소 확인 링크 포함 */
+    const base = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+    const confirmUrl = `${base}cancel-confirm.html?token=${currentReservation.cancel_token}`;
+    await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        access_key: WEB3FORMS_KEY,
+        subject: `[지니뷰티] ⚠️ 예약 취소 요청 - ${currentReservation.name} 고객님`,
+        예약코드: currentReservation.code,
+        이름: currentReservation.name,
+        연락처: currentReservation.phone,
+        시술: currentReservation.service,
+        날짜: formatDate(currentReservation.date),
+        취소확인링크: confirmUrl,
+      }),
+    });
+
+    currentReservation.status = 'cancel_requested';
+    renderCard(currentReservation);
+    alert('취소 요청이 접수되었습니다.\n사장님 확인 후 처리됩니다.');
+  } catch {
+    alert('오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+  }
+}
+
+/* ───── 전화번호로 코드 찾기 ───── */
+async function searchByPhone() {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!phone) { alert('연락처를 입력해 주세요.'); return; }
+
+  try {
+    const data = await sbFetch(`reservations?phone=eq.${encodeURIComponent(phone)}&select=code,service,date,status&order=created_at.desc`);
+    const el = document.getElementById('phoneResult');
+
+    if (!data || data.length === 0) {
+      el.className = 'phone-result show';
+      el.innerHTML = '<p class="msg error">해당 연락처로 등록된 예약이 없습니다.</p>';
+      return;
+    }
+
+    const items = data.map(r => `
+      <div class="code-item">
+        <div>
+          <div class="code-item__code">${r.code}</div>
+          <div class="code-item__info">${r.service} · ${formatDate(r.date)}</div>
+        </div>
+        <a class="code-item__use" href="#" onclick="useCode('${r.code}')">이 코드로 조회</a>
+      </div>
+    `).join('');
+
+    el.className = 'phone-result show';
+    el.innerHTML = `<p class="phone-result__title">등록된 예약 ${data.length}건</p>` + items;
+  } catch {
+    alert('조회 중 오류가 발생했습니다.');
+  }
+}
+
+function useCode(code) {
+  switchTab('code');
+  document.getElementById('codeInput').value = code;
+  searchByCode();
+}
+
+/* 연락처 자동 하이픈 */
+document.getElementById('phoneInput').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length < 4) e.target.value = v;
+  else if (v.length < 8) e.target.value = v.slice(0,3) + '-' + v.slice(3);
+  else e.target.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
+});
+document.getElementById('editPhone').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length < 4) e.target.value = v;
+  else if (v.length < 8) e.target.value = v.slice(0,3) + '-' + v.slice(3);
+  else e.target.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
+});
+</script>
+</body>
+</html>

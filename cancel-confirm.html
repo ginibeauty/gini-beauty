@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light only" />
+<title>예약 취소 확인 | 지니뷰티</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+<style>
+:root { color-scheme: light only; --cream: #FAF6F0; --rose: #C08C7E; --ink: #2B2521; --ink-soft: #6E635A; --line: #E7DECF; --sans: "Noto Sans KR", sans-serif; --serif: "Playfair Display", serif; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #FAF6F0 !important; color: #2B2521 !important; font-family: var(--sans); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.card { background: #fff; border: 1.5px solid var(--line); border-radius: 24px; padding: 40px 32px; max-width: 480px; width: 100%; text-align: center; }
+.logo { font-family: var(--serif); font-size: 1.4rem; color: var(--ink); margin-bottom: 32px; }
+.logo span { color: var(--rose); font-style: italic; }
+.icon { font-size: 3rem; margin-bottom: 16px; }
+h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
+.sub { color: var(--ink-soft); font-size: 0.9rem; margin-bottom: 28px; line-height: 1.6; }
+.info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f5f0eb; font-size: 0.9rem; text-align: left; }
+.info-row .label { color: var(--ink-soft); }
+.info-row .value { font-weight: 500; }
+.btn { width: 100%; padding: 15px; border: none; border-radius: 999px; font-family: var(--sans); font-size: 0.95rem; font-weight: 500; cursor: pointer; margin-top: 12px; }
+.btn-confirm { background: #C62828; color: #fff; }
+.btn-confirm:hover { filter: brightness(1.1); }
+.btn-confirm:disabled { opacity: .6; cursor: not-allowed; }
+.result-msg { margin-top: 20px; padding: 16px; border-radius: 12px; font-size: 0.9rem; }
+.result-msg.success { background: #E8F5E9; color: #2E7D32; }
+.result-msg.error { background: #FFEBEE; color: #C62828; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Genie<span>Beauty</span></div>
+  <div id="content">
+    <div class="icon">⏳</div>
+    <h1>취소 정보 불러오는 중...</h1>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://dxnhcntvckhexyresxsv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_5fimW-Tc9PgTXt63n8ZQ8g_6QrEP_SG';
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function formatDate(dateStr) {
+  const [y, m, d] = dateStr.split('-');
+  return `${y}년 ${m}월 ${d}일`;
+}
+
+const params = new URLSearchParams(window.location.search);
+const token = params.get('token');
+let reservation = null;
+
+async function init() {
+  const content = document.getElementById('content');
+
+  if (!token) {
+    content.innerHTML = '<div class="icon">❌</div><h1>잘못된 접근입니다</h1><p class="sub">올바른 취소 확인 링크가 아닙니다.</p>';
+    return;
+  }
+
+  try {
+    const data = await sbFetch(`reservations?cancel_token=eq.${token}&select=*`);
+    if (!data || data.length === 0) {
+      content.innerHTML = '<div class="icon">❌</div><h1>유효하지 않은 링크입니다</h1><p class="sub">이미 처리되었거나 잘못된 링크입니다.</p>';
+      return;
+    }
+
+    reservation = data[0];
+
+    if (reservation.status === 'cancelled') {
+      content.innerHTML = '<div class="icon">✅</div><h1>이미 취소 처리된 예약입니다</h1>';
+      return;
+    }
+
+    content.innerHTML = `
+      <div class="icon">⚠️</div>
+      <h1>예약 취소 확인</h1>
+      <p class="sub">아래 예약을 취소 처리하시겠습니까?</p>
+      <div style="margin: 20px 0;">
+        <div class="info-row"><span class="label">이름</span><span class="value">${reservation.name}</span></div>
+        <div class="info-row"><span class="label">연락처</span><span class="value">${reservation.phone}</span></div>
+        <div class="info-row"><span class="label">시술</span><span class="value">${reservation.service}</span></div>
+        <div class="info-row"><span class="label">날짜</span><span class="value">${formatDate(reservation.date)}</span></div>
+        <div class="info-row"><span class="label">예약코드</span><span class="value">${reservation.code}</span></div>
+      </div>
+      <button class="btn btn-confirm" id="confirmBtn" onclick="confirmCancel()">취소 확인 처리</button>
+      <div id="resultMsg"></div>
+    `;
+  } catch {
+    content.innerHTML = '<div class="icon">❌</div><h1>오류가 발생했습니다</h1><p class="sub">잠시 후 다시 시도해 주세요.</p>';
+  }
+}
+
+async function confirmCancel() {
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true; btn.textContent = '처리 중...';
+
+  try {
+    await sbFetch(`reservations?cancel_token=eq.${token}`, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({ status: 'cancelled' }),
+    });
+    document.getElementById('resultMsg').innerHTML = '<div class="result-msg success">✅ 취소 처리가 완료되었습니다.</div>';
+    btn.style.display = 'none';
+  } catch {
+    document.getElementById('resultMsg').innerHTML = '<div class="result-msg error">오류가 발생했습니다. 다시 시도해 주세요.</div>';
+    btn.disabled = false; btn.textContent = '취소 확인 처리';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

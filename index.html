@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light only" />
+<title>지니뷰티 | Genie Beauty</title>
+<meta name="description" content="지니뷰티 - 눈썹문신, 피부미용, 염색을 전문으로 하는 프라이빗 1인 뷰티샵" />
+
+<!-- ===== Google Fonts: Playfair Display(영문 헤더) + Noto Sans KR(본문) ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+
+<style>
+/* =========================================================
+   지니뷰티 (Genie Beauty) — 1인 뷰티샵 홈페이지
+   디자인 토큰 / 변수 정의
+   ========================================================= */
+:root {
+  color-scheme: light only;
+  /* 컬러 팔레트 — 밝고 깨끗하며 고급스러운 웜 뉴트럴 */
+  --cream:      #FAF6F0;   /* 기본 배경 (아이보리) */
+  --cream-deep: #F2EBE1;   /* 살짝 진한 배경 */
+  --white:      #FFFFFF;
+  --ink:        #2B2521;   /* 본문 텍스트 (딥 브라운 차콜) */
+  --ink-soft:   #6E635A;   /* 보조 텍스트 */
+  --taupe:      #B7A793;   /* 토프 (보더/디테일) */
+  --rose:       #C08C7E;   /* 포인트 — 더스티 로즈 */
+  --rose-deep:  #A6715F;   /* 포인트 진한 톤 (호버) */
+  --gold:       #BFA06A;   /* 포인트 — 뮤트 골드 */
+  --line:       #E7DECF;   /* 구분선 */
+
+  /* 타이포 */
+  --serif: "Playfair Display", serif;
+  --sans:  "Noto Sans KR", sans-serif;
+
+  /* 간격 / 모션 */
+  --maxw: 1180px;
+  --nav-h: 72px;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* ===== 리셋 ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); -webkit-text-size-adjust: 100%; background: #FAF6F0 !important; }
+body {
+  font-family: var(--sans);
+  font-weight: 400;
+  color: #2B2521 !important;
+  background: #FAF6F0 !important;
+  line-height: 1.7;
+  letter-spacing: -0.01em;
+  overflow-x: hidden;
+}
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+ul { list-style: none; }
+
+/* ===== 공통 유틸 ===== */
+.wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+.eyebrow {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--rose);
+  letter-spacing: 0.04em;
+  margin-bottom: 14px;
+}
+.section-title {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(1.9rem, 5vw, 2.9rem);
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+}
+.section-head { text-align: center; max-width: 620px; margin: 0 auto 56px; }
+.section-head p { color: var(--ink-soft); margin-top: 16px; font-weight: 300; }
+
+/* 버튼 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 15px 34px;
+  font-size: 0.92rem; font-weight: 500; letter-spacing: 0.02em;
+  border-radius: 999px;
+  transition: all .35s var(--ease);
+}
+.btn-primary { background: var(--ink); color: var(--cream); }
+.btn-primary:hover { background: var(--rose-deep); transform: translateY(-2px); }
+.btn-outline { border: 1px solid var(--ink); color: var(--ink); }
+.btn-outline:hover { background: var(--ink); color: var(--cream); }
+.btn-call { background: var(--rose); color: var(--white); border: 1px solid var(--rose); }
+.btn-call:hover { background: var(--rose-deep); border-color: var(--rose-deep); transform: translateY(-2px); }
+
+/* 스크롤 등장 애니메이션 (JS IntersectionObserver 와 연동) */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
+.reveal.in { opacity: 1; transform: none; }
+
+/* =========================================================
+   1) 상단 고정 네비게이션 바
+   ========================================================= */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--nav-h);
+  display: flex; align-items: center;
+  transition: background .4s var(--ease), box-shadow .4s var(--ease), backdrop-filter .4s var(--ease);
+}
+.nav .wrap { display: flex; align-items: center; justify-content: space-between; }
+.nav__logo {
+  font-family: var(--serif); font-size: 1.5rem; font-weight: 600;
+  letter-spacing: 0.02em; color: var(--white); transition: color .4s var(--ease);
+}
+.nav__logo span { font-style: italic; color: var(--rose); }
+.nav__menu { display: none; gap: 38px; }
+.nav__menu a {
+  font-size: 0.9rem; font-weight: 500; color: rgba(255,255,255,.9);
+  letter-spacing: 0.01em; position: relative; transition: color .3s var(--ease);
+}
+.nav__menu a::after {
+  content: ""; position: absolute; left: 0; bottom: -6px; height: 1px; width: 0;
+  background: var(--rose); transition: width .35s var(--ease);
+}
+.nav__menu a:hover::after { width: 100%; }
+.nav__cta {
+  display: none;
+  padding: 10px 24px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.55); color: var(--white);
+  font-size: 0.85rem; font-weight: 500; transition: all .35s var(--ease);
+}
+.nav__cta:hover { background: var(--white); color: var(--ink); border-color: var(--white); }
+.nav__call { background: var(--rose) !important; border-color: var(--rose) !important; color: var(--white) !important; display: none; align-items: center; gap: 6px; }
+.nav__call:hover { background: var(--rose-deep) !important; border-color: var(--rose-deep) !important; color: var(--white) !important; }
+.nav.scrolled .nav__call { background: var(--rose) !important; border-color: var(--rose) !important; color: var(--white) !important; }
+
+/* 스크롤 시 (.scrolled) — 배경색/텍스트 변경 */
+.nav.scrolled {
+  background: rgba(250, 246, 240, .9);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 var(--line), 0 8px 30px rgba(43,37,33,.05);
+}
+.nav.scrolled .nav__logo { color: var(--ink); }
+.nav.scrolled .nav__menu a { color: var(--ink); }
+.nav.scrolled .nav__cta { color: var(--ink); border-color: var(--ink); }
+.nav.scrolled .nav__cta:hover { background: var(--ink); color: var(--cream); }
+
+/* 모바일 햄버거 */
+.nav__toggle { display: flex; flex-direction: column; gap: 5px; padding: 6px; }
+.nav__toggle span { width: 24px; height: 2px; background: var(--white); transition: background .4s var(--ease); }
+.nav.scrolled .nav__toggle span { background: var(--ink); }
+
+/* 모바일 드로어 메뉴 */
+.drawer {
+  position: fixed; inset: 0; z-index: 99;
+  background: var(--cream);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px;
+  opacity: 0; visibility: hidden; transition: opacity .4s var(--ease), visibility .4s var(--ease);
+}
+.drawer.open { opacity: 1; visibility: visible; }
+.drawer a { font-family: var(--serif); font-size: 1.6rem; color: var(--ink); }
+.drawer .btn { margin-top: 12px; }
+
+/* =========================================================
+   2) Hero 섹션 — 풀스크린
+   ========================================================= */
+.hero {
+  position: relative; min-height: 100vh;
+  display: flex; align-items: center;
+  background: linear-gradient(105deg, rgba(43,37,33,.55) 0%, rgba(43,37,33,.15) 55%, rgba(43,37,33,0) 100%),
+              url("https://picsum.photos/id/1027/1600/2000") center/cover no-repeat;
+}
+/* 작은 화면에서는 살짝 더 어둡게 (텍스트 가독성) */
+.hero__inner { color: var(--white); max-width: 600px; padding: 110px 0 60px; }
+.hero__eyebrow {
+  font-family: var(--serif); font-style: italic; font-size: 1.05rem;
+  letter-spacing: 0.06em; color: #F0DCD2; margin-bottom: 18px;
+}
+.hero__title {
+  font-family: var(--serif); font-weight: 500;
+  font-size: clamp(3rem, 11vw, 6rem); line-height: 1.02; letter-spacing: 0.01em;
+}
+.hero__title em { font-style: italic; color: #E9C7B8; }
+.hero__slogan {
+  margin: 26px 0 38px; font-size: clamp(1rem, 3.6vw, 1.2rem);
+  font-weight: 300; max-width: 440px; color: rgba(255,255,255,.92);
+}
+.hero__actions { display: flex; flex-wrap: wrap; gap: 14px; }
+.hero .btn-outline { border-color: rgba(255,255,255,.7); color: var(--white); }
+.hero .btn-outline:hover { background: var(--white); color: var(--ink); }
+.hero__scroll {
+  position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%);
+  color: rgba(255,255,255,.8); font-size: 0.72rem; letter-spacing: 0.25em;
+  text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.hero__scroll::after {
+  content: ""; width: 1px; height: 42px;
+  background: linear-gradient(rgba(255,255,255,.7), rgba(255,255,255,0));
+  animation: scrollline 1.8s var(--ease) infinite;
+}
+@keyframes scrollline { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+
+/* =========================================================
+   3) 시술 메뉴 — 카드 3종
+   ========================================================= */
+.services { padding: 110px 0; background: var(--cream); }
+.services__grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
+.service-card {
+  background: var(--white); border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+  transition: transform .5s var(--ease), box-shadow .5s var(--ease);
+}
+.service-card:hover { transform: translateY(-8px); box-shadow: 0 24px 50px rgba(43,37,33,.1); }
+.service-card__img { position: relative; aspect-ratio: 4/3; overflow: hidden; }
+.service-card__img img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
+.service-card:hover .service-card__img img { transform: scale(1.06); }
+.service-card__no {
+  position: absolute; top: 16px; left: 16px;
+  font-family: var(--serif); font-style: italic; font-size: 0.95rem;
+  color: var(--white); background: rgba(43,37,33,.45); backdrop-filter: blur(4px);
+  width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center;
+}
+.service-card__body { padding: 30px 28px 34px; }
+.service-card__body h3 { font-size: 1.35rem; font-weight: 700; margin-bottom: 6px; }
+.service-card__body .en { font-family: var(--serif); font-style: italic; font-size: 0.9rem; color: var(--taupe); margin-bottom: 16px; }
+.service-card__body p { color: var(--ink-soft); font-weight: 300; font-size: 0.95rem; min-height: 78px; }
+.service-card__foot {
+  margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line);
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.service-card__foot .label { font-size: 0.8rem; color: var(--ink-soft); }
+.service-card__price { font-family: var(--serif); font-size: 1.45rem; color: var(--rose-deep); }
+.service-card__price small { font-size: 0.8rem; color: var(--ink-soft); font-family: var(--sans); margin-left: 2px; }
+
+/* =========================================================
+   4) 포트폴리오 — Before & After 갤러리
+   ========================================================= */
+.portfolio { padding: 110px 0; background: var(--cream-deep); }
+.ba-grid { display: grid; grid-template-columns: 1fr; gap: 28px; }
+.ba-card { background: var(--white); padding: 14px; border-radius: 6px; box-shadow: 0 14px 36px rgba(43,37,33,.06); }
+.ba-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ba-pair figure { position: relative; aspect-ratio: 1/1; overflow: hidden; border-radius: 4px; }
+.ba-pair figure img { width: 100%; height: 100%; object-fit: cover; }
+.ba-pair figcaption {
+  position: absolute; top: 10px; left: 10px;
+  font-family: var(--serif); font-style: italic; font-size: 0.72rem; letter-spacing: 0.08em;
+  color: var(--white); background: rgba(43,37,33,.55); padding: 4px 12px; border-radius: 999px;
+}
+.ba-pair figcaption.after { background: var(--rose); }
+.ba-card__caption { text-align: center; padding: 16px 8px 8px; font-size: 0.92rem; color: var(--ink-soft); }
+.ba-card__caption strong { display: block; color: var(--ink); font-weight: 500; margin-bottom: 2px; }
+
+/* =========================================================
+   5) 후기 섹션 — 리뷰 카드 3개
+   ========================================================= */
+.reviews { padding: 110px 0; background: var(--cream); }
+.reviews__grid { display: grid; grid-template-columns: 1fr; gap: 26px; }
+.review-card {
+  background: var(--white); border: 1px solid var(--line); border-radius: 6px;
+  padding: 36px 30px; position: relative;
+}
+.review-card::before {
+  content: "\201C"; font-family: var(--serif); font-size: 5rem; line-height: 1;
+  color: var(--cream-deep); position: absolute; top: 14px; right: 22px;
+}
+.review-card__stars { color: var(--gold); letter-spacing: 3px; margin-bottom: 16px; font-size: 0.95rem; }
+.review-card__text { font-weight: 300; color: var(--ink); position: relative; z-index: 1; }
+.review-card__author { margin-top: 24px; display: flex; align-items: center; gap: 12px; }
+.review-card__avatar {
+  width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  background: var(--cream-deep);
+}
+.review-card__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.review-card__meta strong { display: block; font-weight: 500; font-size: 0.95rem; }
+.review-card__meta span { font-size: 0.8rem; color: var(--taupe); }
+
+/* =========================================================
+   6) 예약 문의 폼
+   ========================================================= */
+.booking { padding: 110px 0; background: var(--ink); color: var(--cream); }
+.booking__inner { display: grid; grid-template-columns: 1fr; gap: 48px; }
+.booking__intro .eyebrow { color: #E9C7B8; }
+.booking__intro .section-title { color: var(--cream); }
+.booking__intro p { color: rgba(250,246,240,.7); font-weight: 300; margin-top: 18px; }
+.booking__contacts { margin-top: 36px; display: grid; gap: 18px; }
+.booking__contacts li { display: flex; gap: 14px; align-items: flex-start; font-size: 0.95rem; }
+.booking__contacts .ic { color: var(--rose); width: 22px; flex-shrink: 0; }
+.booking__contacts span b { display: block; font-weight: 500; }
+.booking__contacts small { color: rgba(250,246,240,.6); }
+
+.form { background: var(--cream); color: var(--ink); border-radius: 8px; padding: 36px 30px; }
+.form__row { margin-bottom: 18px; }
+.form__row label { display: block; font-size: 0.82rem; font-weight: 500; margin-bottom: 8px; letter-spacing: 0.01em; }
+.form__row input, .form__row select {
+  width: 100%; padding: 13px 16px; font-family: inherit; font-size: 0.95rem; color: var(--ink);
+  background: var(--white); border: 1px solid var(--line); border-radius: 4px; transition: border-color .3s var(--ease);
+}
+.form__row input:focus, .form__row select:focus { outline: none; border-color: var(--rose); }
+.form__two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form__submit { width: 100%; margin-top: 8px; }
+.form__kakao {
+  width: 100%; margin-top: 12px; padding: 15px;
+  background: #FEE500; color: #391B1B; border-radius: 999px;
+  font-weight: 700; font-size: 0.92rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: filter .3s var(--ease);
+}
+.form__kakao:hover { filter: brightness(.95); }
+.form__note { font-size: 0.76rem; color: var(--ink-soft); text-align: center; margin-top: 16px; }
+.code-result { display: none; margin-top: 20px; background: #fff8f5; border: 2px solid var(--rose); border-radius: 16px; padding: 24px 16px; text-align: center; max-width: 100%; overflow: hidden; }
+.code-result.show { display: block; }
+.code-result__title { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 8px; }
+.code-result__code { font-size: clamp(1.2rem, 6vw, 1.8rem); font-weight: 700; letter-spacing: 2px; color: var(--rose); margin-bottom: 16px; word-break: break-all; }
+.code-result__copy { font-size: 0.82rem; background: var(--rose); color: #fff; border: none; border-radius: 999px; padding: 8px 20px; cursor: pointer; }
+.code-result__copy:hover { filter: brightness(1.1); }
+.code-result__warn { font-size: 0.76rem; color: #999; margin-top: 12px; line-height: 1.6; }
+
+/* 지도 바로가기 버튼 */
+.map-links { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.map-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: 999px;
+  font-size: 0.78rem; font-weight: 500; letter-spacing: 0.01em;
+  transition: all .25s var(--ease);
+}
+.map-btn--kakao { background: #FEE500; color: #391B1B; }
+.map-btn--kakao:hover { filter: brightness(.93); transform: translateY(-1px); }
+.map-btn--naver { background: #03C75A; color: #fff; }
+.map-btn--naver:hover { filter: brightness(.9); transform: translateY(-1px); }
+
+/* =========================================================
+   7) 푸터
+   ========================================================= */
+.footer { background: var(--cream-deep); padding: 70px 0 40px; }
+.footer__grid { display: grid; grid-template-columns: 1fr; gap: 38px; margin-bottom: 48px; }
+.footer__logo { font-family: var(--serif); font-size: 1.7rem; font-weight: 600; margin-bottom: 14px; }
+.footer__logo span { font-style: italic; color: var(--rose); }
+.footer__brand p { color: var(--ink-soft); font-weight: 300; font-size: 0.92rem; max-width: 300px; }
+.footer__col h4 { font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--taupe); margin-bottom: 18px; }
+.footer__col li { color: var(--ink-soft); font-size: 0.92rem; margin-bottom: 10px; font-weight: 300; }
+.footer__col li b { color: var(--ink); font-weight: 500; }
+.footer__sns { display: flex; gap: 12px; }
+.footer__sns a {
+  width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--taupe);
+  display: grid; place-items: center; color: var(--ink); transition: all .35s var(--ease);
+}
+.footer__sns a:hover { background: var(--rose); border-color: var(--rose); color: var(--white); transform: translateY(-3px); }
+.footer__bottom {
+  border-top: 1px solid var(--line); padding-top: 24px;
+  display: flex; flex-direction: column; gap: 8px; align-items: center; text-align: center;
+  font-size: 0.8rem; color: var(--taupe);
+}
+
+/* =========================================================
+   플로팅 카카오 채널 버튼
+   ========================================================= */
+.kakao-float {
+  position: fixed; right: 20px; bottom: 20px; z-index: 90;
+  display: flex; align-items: center; gap: 0;
+  background: #FEE500; color: #391B1B;
+  height: 56px; padding: 0 18px; border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(43,37,33,.22);
+  font-weight: 700; font-size: 0.9rem;
+  transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+}
+.kakao-float:hover { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(43,37,33,.3); }
+.kakao-float svg { flex-shrink: 0; }
+.kakao-float span { max-width: 0; overflow: hidden; white-space: nowrap; opacity: 0; transition: max-width .4s var(--ease), opacity .3s var(--ease), margin .4s var(--ease); }
+.kakao-float:hover span { max-width: 140px; opacity: 1; margin-left: 8px; }
+
+/* =========================================================
+   반응형 — 태블릿 이상 (모바일 우선 → 확장)
+   ========================================================= */
+@media (min-width: 720px) {
+  .services__grid { grid-template-columns: repeat(3, 1fr); }
+  .ba-grid { grid-template-columns: repeat(2, 1fr); }
+  .reviews__grid { grid-template-columns: repeat(3, 1fr); }
+  .footer__grid { grid-template-columns: 1.4fr 1fr 1fr; }
+  .footer__bottom { flex-direction: row; justify-content: space-between; }
+}
+@media (min-width: 920px) {
+  :root { --nav-h: 84px; }
+  .nav__menu, .nav__cta, .nav__call { display: flex; }
+  .nav__toggle { display: none; }
+  .booking__inner { grid-template-columns: 1fr 1fr; gap: 70px; align-items: center; }
+}
+@media (max-width: 719px) {
+  /* 모바일에서 hero 오버레이 강화 */
+  .hero { background: linear-gradient(180deg, rgba(43,37,33,.5), rgba(43,37,33,.35)),
+                     url("https://picsum.photos/id/1027/900/1400") center/cover no-repeat; }
+  /* 모바일 히어로 버튼 겹침 방지 */
+  .hero__actions { flex-direction: column; align-items: flex-start; gap: 10px; padding-bottom: 80px; }
+  /* 스크롤 인디케이터 위치 조정 */
+  .hero__scroll { bottom: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================= 네비게이션 ============================= -->
+<nav class="nav" id="nav">
+  <div class="wrap">
+    <a href="#hero" class="nav__logo">Genie<span>Beauty</span></a>
+    <ul class="nav__menu">
+      <li><a href="#services">시술 메뉴</a></li>
+      <li><a href="#portfolio">포트폴리오</a></li>
+      <li><a href="#reviews">고객 후기</a></li>
+      <li><a href="#booking">예약 문의</a></li>
+      <li><a href="reservation.html">예약 조회</a></li>
+    </ul>
+    <a href="tel:01076836770" class="nav__cta nav__call">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+      바로 전화하기
+    </a>
+    <a href="#booking" class="nav__cta">예약하기</a>
+    <button class="nav__toggle" id="navToggle" aria-label="메뉴 열기">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- 모바일 드로어 -->
+<div class="drawer" id="drawer">
+  <a href="#services">시술 메뉴</a>
+  <a href="#portfolio">포트폴리오</a>
+  <a href="#reviews">고객 후기</a>
+  <a href="#booking">예약 문의</a>
+  <a href="#booking" class="btn btn-primary">예약하기</a>
+  <a href="tel:01076836770" class="btn btn-call">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+    바로 전화하기
+  </a>
+</div>
+
+<!-- ============================= 1) HERO ============================= -->
+<header class="hero" id="hero">
+  <div class="wrap">
+    <div class="hero__inner">
+      <p class="hero__eyebrow">Private Beauty Studio</p>
+      <h1 class="hero__title">당신만을 위한<br /><em>고요한</em> 아름다움</h1>
+      <p class="hero__slogan">1:1 프라이빗 케어로 완성하는 자연스러운 변화. 눈썹문신부터 피부미용, 염색까지 — 지니뷰티가 함께합니다.</p>
+      <div class="hero__actions">
+        <a href="#booking" class="btn btn-primary">예약하기</a>
+        <a href="tel:01076836770" class="btn btn-call">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+          바로 전화하기
+        </a>
+        <a href="#services" class="btn btn-outline">시술 둘러보기</a>
+      </div>
+    </div>
+  </div>
+  <div class="hero__scroll">Scroll</div>
+</header>
+
+<!-- ============================= 2) 시술 메뉴 ============================= -->
+<section class="services" id="services">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Our Services</p>
+      <h2 class="section-title">정성을 담은 세 가지 케어</h2>
+      <p>한 분 한 분께 충분한 시간을 들이는 1인 샵. 서두르지 않고, 당신에게 가장 잘 어울리는 결과를 찾아드립니다.</p>
+    </div>
+    <div class="services__grid">
+
+      <!-- 카드 1 — 눈썹문신 -->
+      <article class="service-card reveal">
+        <div class="service-card__img">
+          <span class="service-card__no">01</span>
+          <img src="https://picsum.photos/id/64/640/480" alt="눈썹문신 시술" loading="lazy" />
+        </div>
+        <div class="service-card__body">
+          <h3>눈썹문신</h3>
+          <p class="en">Eyebrow Tattoo</p>
+          <p>얼굴형과 인상에 맞춘 1:1 디자인. 자연스러운 결 표현으로 화장한 듯 또렷하면서도 부담 없는 눈썹을 완성합니다.</p>
+          <div class="service-card__foot">
+            <span class="label">자연눈썹 · 콤보 기준</span>
+            <span class="service-card__price">150,000<small>원~</small></span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 카드 2 — 피부미용 -->
+      <article class="service-card reveal">
+        <div class="service-card__img">
+          <span class="service-card__no">02</span>
+          <img src="https://picsum.photos/id/1062/640/480" alt="피부미용 관리" loading="lazy" />
+        </div>
+        <div class="service-card__body">
+          <h3>피부미용</h3>
+          <p class="en">Skin Care</p>
+          <p>피부 상태를 꼼꼼히 진단하고 맞춤 관리를 제안합니다. 딥클렌징부터 진정·보습 케어까지, 맑고 건강한 피부결로.</p>
+          <div class="service-card__foot">
+            <span class="label">기본 관리 · 60분 기준</span>
+            <span class="service-card__price">80,000<small>원~</small></span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 카드 3 — 염색 -->
+      <article class="service-card reveal">
+        <div class="service-card__img">
+          <span class="service-card__no">03</span>
+          <img src="https://picsum.photos/id/177/640/480" alt="염색 시술" loading="lazy" />
+        </div>
+        <div class="service-card__body">
+          <h3>염색</h3>
+          <p class="en">Hair Coloring</p>
+          <p>퍼스널컬러와 두피 컨디션을 고려한 컬러 처방. 손상은 줄이고 발색은 살린, 오래도록 예쁜 컬러를 연출합니다.</p>
+          <div class="service-card__foot">
+            <span class="label">뿌리·전체 염색 기준</span>
+            <span class="service-card__price">70,000<small>원~</small></span>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================= 3) 포트폴리오 (Before & After) ============================= -->
+<section class="portfolio" id="portfolio">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Before &amp; After</p>
+      <h2 class="section-title">변화로 증명하는 디테일</h2>
+      <p>실제 시술 사례를 통해 지니뷰티의 결과를 만나보세요. (이미지는 샘플 플레이스홀더입니다.)</p>
+    </div>
+    <div class="ba-grid">
+
+      <!-- BA 1 -->
+      <article class="ba-card reveal">
+        <div class="ba-pair">
+          <figure><figcaption>BEFORE</figcaption><img src="https://picsum.photos/id/823/500/500?grayscale" alt="시술 전" loading="lazy" /></figure>
+          <figure><figcaption class="after">AFTER</figcaption><img src="https://picsum.photos/id/823/500/500" alt="시술 후" loading="lazy" /></figure>
+        </div>
+        <p class="ba-card__caption"><strong>자연 눈썹문신</strong>또렷하면서도 부드러운 인상으로</p>
+      </article>
+
+      <!-- BA 2 -->
+      <article class="ba-card reveal">
+        <div class="ba-pair">
+          <figure><figcaption>BEFORE</figcaption><img src="https://picsum.photos/id/1011/500/500?grayscale" alt="시술 전" loading="lazy" /></figure>
+          <figure><figcaption class="after">AFTER</figcaption><img src="https://picsum.photos/id/1011/500/500" alt="시술 후" loading="lazy" /></figure>
+        </div>
+        <p class="ba-card__caption"><strong>진정 피부 관리</strong>붉은기 완화, 맑아진 피부결</p>
+      </article>
+
+      <!-- BA 3 -->
+      <article class="ba-card reveal">
+        <div class="ba-pair">
+          <figure><figcaption>BEFORE</figcaption><img src="https://picsum.photos/id/342/500/500?grayscale" alt="시술 전" loading="lazy" /></figure>
+          <figure><figcaption class="after">AFTER</figcaption><img src="https://picsum.photos/id/342/500/500" alt="시술 후" loading="lazy" /></figure>
+        </div>
+        <p class="ba-card__caption"><strong>맞춤 컬러 염색</strong>퍼스널컬러에 맞춘 화사한 톤</p>
+      </article>
+
+      <!-- BA 4 -->
+      <article class="ba-card reveal">
+        <div class="ba-pair">
+          <figure><figcaption>BEFORE</figcaption><img src="https://picsum.photos/id/1062/500/500?grayscale" alt="시술 전" loading="lazy" /></figure>
+          <figure><figcaption class="after">AFTER</figcaption><img src="https://picsum.photos/id/1062/500/500" alt="시술 후" loading="lazy" /></figure>
+        </div>
+        <p class="ba-card__caption"><strong>리프팅 케어</strong>탄력 있고 생기 도는 피부로</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================= 4) 고객 후기 ============================= -->
+<section class="reviews" id="reviews">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Client Reviews</p>
+      <h2 class="section-title">고객님들의 진심 어린 후기</h2>
+    </div>
+    <div class="reviews__grid">
+
+      <!-- 리뷰 1 -->
+      <article class="review-card reveal">
+        <div class="review-card__stars">★★★★★</div>
+        <p class="review-card__text">눈썹 때문에 늘 고민이었는데, 얼굴형 보고 디자인을 잡아주셔서 너무 자연스러워요. 화장 안 해도 인상이 또렷해졌어요!</p>
+        <div class="review-card__author">
+          <div class="review-card__avatar"><img src="https://picsum.photos/id/1027/88/88" alt="고객 프로필" loading="lazy" /></div>
+          <div class="review-card__meta"><strong>김○○ 님</strong><span>눈썹문신</span></div>
+        </div>
+      </article>
+
+      <!-- 리뷰 2 -->
+      <article class="review-card reveal">
+        <div class="review-card__stars">★★★★★</div>
+        <p class="review-card__text">1인샵이라 오롯이 저한테만 집중해주시는 게 정말 좋았어요. 피부 진정 관리 받고 붉은기가 확실히 가라앉았습니다. 재방문 확정이에요.</p>
+        <div class="review-card__author">
+          <div class="review-card__avatar"><img src="https://picsum.photos/id/1011/88/88" alt="고객 프로필" loading="lazy" /></div>
+          <div class="review-card__meta"><strong>이○○ 님</strong><span>피부미용</span></div>
+        </div>
+      </article>
+
+      <!-- 리뷰 3 -->
+      <article class="review-card reveal">
+        <div class="review-card__stars">★★★★★</div>
+        <p class="review-card__text">제 피부톤에 맞는 컬러를 추천해주셔서 만족도가 높아요. 손상도 거의 없고 발색이 오래가요. 분위기도 편안하고 친절하세요 :)</p>
+        <div class="review-card__author">
+          <div class="review-card__avatar"><img src="https://picsum.photos/id/342/88/88" alt="고객 프로필" loading="lazy" /></div>
+          <div class="review-card__meta"><strong>박○○ 님</strong><span>염색</span></div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================= 5) 예약 문의 ============================= -->
+<section class="booking" id="booking">
+  <div class="wrap">
+    <div class="booking__inner">
+
+      <!-- 좌측 안내 -->
+      <div class="booking__intro reveal">
+        <p class="eyebrow">Reservation</p>
+        <h2 class="section-title">예약 문의하기</h2>
+        <p>원하시는 시술과 일정을 남겨주시면, 확인 후 빠르게 연락드립니다. 빠른 상담은 카카오 채널을 이용해 주세요.</p>
+        <ul class="booking__contacts">
+          <li><span class="ic">●</span><span><b>전화 예약</b><small>010-7683-6770</small></span></li>
+          <li><span class="ic">●</span><span><b>오시는 길</b><small>경북 경주시 현곡면 금장5길 20-20 삼성강변타운상가 나동 1층 105호</small></span></li>
+          <li style="padding-left:1.4rem;">
+            <div class="map-links">
+              <a href="https://map.kakao.com/?q=경북+경주시+현곡면+금장5길+20-20" target="_blank" rel="noopener" class="map-btn map-btn--kakao">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 4C7.03 4 3 7.13 3 11c0 2.5 1.7 4.69 4.26 5.95-.18.64-.68 2.43-.78 2.8-.12.46.17.45.36.33.15-.1 2.36-1.6 3.32-2.25.6.08 1.21.12 1.84.12 4.97 0 9-3.13 9-7s-4.03-7-9-7z"/></svg>
+                카카오맵
+              </a>
+              <a href="https://map.naver.com/v5/search/경북+경주시+현곡면+금장5길+20-20" target="_blank" rel="noopener" class="map-btn map-btn--naver">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 4h4.2l4.3 6.4V4H19v16h-4.2l-4.3-6.4V20H5z"/></svg>
+                네이버지도
+              </a>
+            </div>
+          </li>
+          <li><span class="ic">●</span><span><b>영업시간</b><small>평일 10:00 – 20:00 / 주말 10:00 – 18:00</small></span></li>
+        </ul>
+      </div>
+
+      <!-- 우측 폼 -->
+      <form class="form reveal" id="bookingForm" novalidate>
+        <input type="hidden" name="access_key" value="6114541f-3206-4da6-8c5b-606326dd5bfe" />
+        <input type="hidden" name="subject" value="지니뷰티 예약 문의가 접수되었습니다" />
+        <div class="form__row">
+          <label for="name">이름</label>
+          <input type="text" id="name" name="name" placeholder="성함을 입력해 주세요" required />
+        </div>
+        <div class="form__row">
+          <label for="phone">연락처 <span style="font-size:0.75rem;font-weight:400;color:#aaa;letter-spacing:0;">· 정확히 입력하셔야 예약 확인 연락이 가능합니다</span></label>
+          <input type="tel" id="phone" name="phone" placeholder="010-0000-0000" required />
+        </div>
+        <div class="form__two">
+          <div class="form__row">
+            <label for="service">시술 선택</label>
+            <select id="service" name="service" required>
+              <option value="" disabled selected>선택해 주세요</option>
+              <option>눈썹문신</option>
+              <option>피부미용</option>
+              <option>염색</option>
+              <option>기타 상담</option>
+            </select>
+          </div>
+          <div class="form__row">
+            <label for="date">희망 날짜</label>
+            <input type="date" id="date" name="date" required />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary form__submit">예약 문의 보내기</button>
+        <a href="#" class="form__kakao" id="kakaoBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="#391B1B" aria-hidden="true"><path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.9 5.31 4.76 6.71-.21.74-.76 2.7-.87 3.12-.14.52.19.51.4.37.17-.11 2.66-1.81 3.74-2.55.64.09 1.3.14 1.97.14 5.52 0 10-3.58 10-8S17.52 3 12 3z"/></svg>
+          카카오톡 채널로 문의
+        </a>
+        <p class="form__note">* 제출하신 정보는 예약 상담 목적으로만 사용됩니다.</p>
+
+        <!-- 예약 코드 결과 박스 -->
+        <div class="code-result" id="codeResult">
+          <p class="code-result__title">📌 예약 코드가 발급되었습니다</p>
+          <div class="code-result__code" id="codeDisplay"></div>
+          <button type="button" class="code-result__copy" id="codeCopy">코드 복사하기</button>
+          <p class="code-result__warn">이 코드로 예약 확인·수정·취소가 가능합니다.<br>화면을 닫기 전에 반드시 저장해두세요!</p>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============================= 6) 푸터 ============================= -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <div class="footer__logo">Genie<span>Beauty</span></div>
+        <p>당신만을 위한 프라이빗 1인 뷰티샵. 눈썹문신 · 피부미용 · 염색을 정성껏 케어합니다.</p>
+      </div>
+      <div class="footer__col">
+        <h4>Information</h4>
+        <ul>
+          <li><b>영업시간</b></li>
+          <li>평일 10:00 – 20:00</li>
+          <li>주말 10:00 – 18:00</li>
+          <li>매주 월요일 휴무</li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h4>Contact</h4>
+        <ul>
+          <li><b>010-7683-6770</b></li>
+          <li>경북 경주시 현곡면 금장5길 20-20 삼성강변타운상가 나동 1층 105호</li>
+          <li style="margin-top:18px;">
+            <div class="footer__sns">
+              <a href="https://map.kakao.com/?q=경북+경주시+현곡면+금장5길+20-20" target="_blank" rel="noopener" aria-label="카카오맵으로 위치 보기" title="카카오맵">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4C7.03 4 3 7.13 3 11c0 2.5 1.7 4.69 4.26 5.95-.18.64-.68 2.43-.78 2.8-.12.46.17.45.36.33.15-.1 2.36-1.6 3.32-2.25.6.08 1.21.12 1.84.12 4.97 0 9-3.13 9-7s-4.03-7-9-7z"/></svg>
+              </a>
+              <a href="https://map.naver.com/v5/search/경북+경주시+현곡면+금장5길+20-20" target="_blank" rel="noopener" aria-label="네이버지도로 위치 보기" title="네이버지도">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h4.2l4.3 6.4V4H19v16h-4.2l-4.3-6.4V20H5z"/></svg>
+              </a>
+              <a href="#" aria-label="카카오 채널" title="KakaoTalk" id="kakaoFooter">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.9 5.31 4.76 6.71-.21.74-.76 2.7-.87 3.12-.14.52.19.51.4.37.17-.11 2.66-1.81 3.74-2.55.64.09 1.3.14 1.97.14 5.52 0 10-3.58 10-8S17.52 3 12 3z"/></svg>
+              </a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 Genie Beauty. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- 플로팅 카카오 채널 버튼 -->
+<a href="#" class="kakao-float" id="kakaoFloat" aria-label="카카오 채널 문의">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="#391B1B" aria-hidden="true"><path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.9 5.31 4.76 6.71-.21.74-.76 2.7-.87 3.12-.14.52.19.51.4.37.17-.11 2.66-1.81 3.74-2.55.64.09 1.3.14 1.97.14 5.52 0 10-3.58 10-8S17.52 3 12 3z"/></svg>
+  <span>카카오톡 문의</span>
+</a>
+
+<script>
+/* =========================================================
+   지니뷰티 — 인터랙션 스크립트
+   ========================================================= */
+
+/* 1) 스크롤 시 네비게이션 배경색 변경 */
+const nav = document.getElementById('nav');
+const onScroll = () => {
+  if (window.scrollY > 60) nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
+};
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+/* 2) 모바일 드로어 메뉴 토글 */
+const toggle = document.getElementById('navToggle');
+const drawer = document.getElementById('drawer');
+toggle.addEventListener('click', () => drawer.classList.toggle('open'));
+drawer.querySelectorAll('a').forEach(a =>
+  a.addEventListener('click', () => drawer.classList.remove('open'))
+);
+
+/* 3) 스크롤 등장 애니메이션 (IntersectionObserver) */
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('in');
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.reveal').forEach((el, i) => {
+  el.style.transitionDelay = (i % 3) * 0.1 + 's';
+  io.observe(el);
+});
+
+/* Supabase 설정 */
+const SUPABASE_URL = 'https://dxnhcntvckhexyresxsv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_5fimW-Tc9PgTXt63n8ZQ8g_6QrEP_SG';
+
+async function supabaseInsert(data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/reservations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Prefer': 'return=representation',
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+function generateCode() {
+  const today = new Date();
+  const ymd = today.getFullYear().toString()
+    + String(today.getMonth()+1).padStart(2,'0')
+    + String(today.getDate()).padStart(2,'0');
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  return `${ymd}${rand}`;
+}
+
+function generateCancelToken() {
+  return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+}
+
+/* 4) 예약 폼 제출 처리 */
+const form = document.getElementById('bookingForm');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = form.name.value.trim();
+  const phone = form.phone.value.trim();
+  const service = form.service.value;
+  const date = form.date.value;
+
+  if (!name || !phone || !service || !date) {
+    alert('모든 항목을 입력해 주세요.');
+    return;
+  }
+
+  const submitBtn = form.querySelector('.form__submit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '전송 중...';
+
+  try {
+    /* 1) Supabase에 예약 저장 */
+    const code = generateCode();
+    const cancelToken = generateCancelToken();
+    await supabaseInsert({ code, name, phone, service, date, cancel_token: cancelToken });
+
+    /* 2) 사장님 이메일 발송 (Web3Forms) */
+    await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        access_key: '6114541f-3206-4da6-8c5b-606326dd5bfe',
+        subject: `[지니뷰티] 새 예약 문의 - ${name} 고객님`,
+        name, phone, service, date,
+        예약코드: code,
+      }),
+    });
+
+    /* 3) 고객에게 코드 안내 */
+    form.reset();
+    const codeResult = document.getElementById('codeResult');
+    const codeDisplay = document.getElementById('codeDisplay');
+    codeDisplay.textContent = code;
+    codeResult.classList.add('show');
+    codeResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  } catch (err) {
+    console.error(err);
+    alert('오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '예약 문의 보내기';
+  }
+});
+
+/* 5) 카카오 채널 버튼 (실제 채널 URL 연결 위치) */
+const goKakao = (e) => {
+  e.preventDefault();
+  // TODO: 실제 카카오 채널 주소로 교체하세요. 예) window.open('http://pf.kakao.com/_xxxxxx', '_blank');
+  alert('카카오톡 채널로 연결됩니다.\n(실제 채널 URL을 연결해 주세요.)');
+};
+document.getElementById('kakaoFloat').addEventListener('click', goKakao);
+document.getElementById('kakaoBtn').addEventListener('click', goKakao);
+
+/* 6) 희망 날짜 — 오늘 이전 날짜 선택 방지 */
+const dateInput = document.getElementById('date');
+dateInput.min = new Date().toISOString().split('T')[0];
+
+/* 7) 연락처 자동 하이픈 */
+document.getElementById('phone').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length < 4) e.target.value = v;
+  else if (v.length < 8) e.target.value = v.slice(0,3) + '-' + v.slice(3);
+  else e.target.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
+});
+
+/* 8) 예약 코드 복사 버튼 (모바일 대응) */
+document.getElementById('codeCopy').addEventListener('click', () => {
+  const code = document.getElementById('codeDisplay').textContent;
+  const btn = document.getElementById('codeCopy');
+
+  const success = () => {
+    btn.textContent = '복사 완료!';
+    setTimeout(() => { btn.textContent = '코드 복사하기'; }, 2000);
+  };
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(code).then(success).catch(fallback);
+  } else {
+    fallback();
+  }
+
+  function fallback() {
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy');
+      success();
+    } catch {
+      alert('복사 실패. 코드를 직접 메모해 주세요: ' + code);
+    }
+    document.body.removeChild(ta);
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light only" />
+<title>관리자 페이지 | 지니뷰티</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+<style>
+:root {
+  color-scheme: light only;
+  --cream: #FAF6F0; --cream-deep: #F2EBE1; --white: #FFFFFF;
+  --ink: #2B2521; --ink-soft: #6E635A; --taupe: #B7A793;
+  --rose: #C08C7E; --rose-deep: #A6715F; --line: #E7DECF;
+  --sans: "Noto Sans KR", sans-serif; --serif: "Playfair Display", serif;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #FAF6F0 !important; color: #2B2521 !important; font-family: var(--sans); min-height: 100vh; }
+
+/* ── 로그인 화면 ── */
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.login-card { background: var(--white); border: 1.5px solid var(--line); border-radius: 24px; padding: 48px 36px; width: 100%; max-width: 400px; text-align: center; }
+.login-logo { font-family: var(--serif); font-size: 1.6rem; margin-bottom: 8px; }
+.login-logo span { color: var(--rose); font-style: italic; }
+.login-sub { color: var(--ink-soft); font-size: 0.85rem; margin-bottom: 32px; }
+.login-field { margin-bottom: 16px; text-align: left; }
+.login-field label { display: block; font-size: 0.82rem; font-weight: 500; margin-bottom: 6px; }
+.login-field input { width: 100%; padding: 13px 16px; border: 1.5px solid var(--line); border-radius: 12px; font-family: var(--sans); font-size: 0.95rem; outline: none; background: var(--white); color: var(--ink); }
+.login-field input:focus { border-color: var(--rose); }
+.login-btn { width: 100%; padding: 14px; background: var(--rose); color: #fff; border: none; border-radius: 999px; font-family: var(--sans); font-size: 0.95rem; font-weight: 500; cursor: pointer; margin-top: 8px; }
+.login-btn:hover { filter: brightness(1.08); }
+.login-error { color: #C62828; font-size: 0.82rem; margin-top: 10px; display: none; }
+
+/* ── 앱 레이아웃 ── */
+#app { display: none; min-height: 100vh; }
+.header { background: var(--white); border-bottom: 1px solid var(--line); padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.header__logo { font-family: var(--serif); font-size: 1.2rem; }
+.header__logo span { color: var(--rose); font-style: italic; }
+.header__right { display: flex; align-items: center; gap: 16px; }
+.header__user { font-size: 0.82rem; color: var(--ink-soft); }
+.header__logout { font-size: 0.82rem; color: var(--rose); cursor: pointer; background: none; border: none; font-family: var(--sans); }
+.header__logout:hover { text-decoration: underline; }
+
+/* 탭 네비 */
+.tab-nav { background: var(--white); border-bottom: 1px solid var(--line); display: flex; padding: 0 24px; gap: 0; }
+.tab-nav__item { padding: 14px 20px; font-size: 0.88rem; font-weight: 500; color: var(--ink-soft); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; background: none; border-top: none; border-left: none; border-right: none; font-family: var(--sans); transition: all .2s; }
+.tab-nav__item.active { color: var(--rose); border-bottom-color: var(--rose); }
+.tab-nav__item .badge { background: #C62828; color: #fff; font-size: 0.65rem; border-radius: 999px; padding: 1px 6px; margin-left: 4px; }
+
+.content { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
+
+/* ── 대시보드 ── */
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: var(--white); border: 1.5px solid var(--line); border-radius: 16px; padding: 24px; }
+.stat-card__label { font-size: 0.82rem; color: var(--ink-soft); margin-bottom: 8px; }
+.stat-card__value { font-size: 2rem; font-weight: 700; color: var(--ink); }
+.stat-card__value.alert { color: #C62828; }
+.stat-card__sub { font-size: 0.78rem; color: var(--taupe); margin-top: 4px; }
+
+.section-title { font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+
+/* ── 예약 목록 ── */
+.filter-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-btn { padding: 7px 16px; border-radius: 999px; font-size: 0.82rem; font-weight: 500; cursor: pointer; border: 1.5px solid var(--line); background: var(--white); color: var(--ink-soft); font-family: var(--sans); transition: all .2s; }
+.filter-btn.active { background: var(--rose); color: #fff; border-color: var(--rose); }
+
+.table-wrap { background: var(--white); border: 1.5px solid var(--line); border-radius: 16px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+th { background: var(--cream-deep); padding: 12px 16px; font-size: 0.8rem; font-weight: 600; color: var(--ink-soft); text-align: left; }
+td { padding: 14px 16px; font-size: 0.88rem; border-top: 1px solid var(--line); }
+tr:hover td { background: #fdf9f6; }
+.status-badge { font-size: 0.72rem; font-weight: 500; padding: 3px 10px; border-radius: 999px; }
+.status-badge.pending { background: #FFF3E0; color: #E65100; }
+.status-badge.confirmed { background: #E8F5E9; color: #2E7D32; }
+.status-badge.cancel_requested { background: #FFEBEE; color: #C62828; }
+.status-badge.cancelled { background: #F5F5F5; color: #999; }
+.action-btn { font-size: 0.78rem; padding: 5px 12px; border-radius: 999px; border: 1.5px solid var(--line); background: none; cursor: pointer; font-family: var(--sans); margin-left: 4px; }
+.action-btn.edit { color: var(--rose); border-color: var(--rose); }
+.action-btn.cancel { color: #C62828; border-color: #e0c0c0; }
+.action-btn:hover { opacity: .8; }
+
+/* ── 캘린더 ── */
+.cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.cal-header h2 { font-size: 1.1rem; font-weight: 700; }
+.cal-nav { background: none; border: 1.5px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-family: var(--sans); font-size: 0.85rem; color: var(--ink); }
+.cal-nav:hover { border-color: var(--rose); color: var(--rose); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-day-label { text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); padding: 8px 0; }
+.cal-cell { min-height: 72px; background: var(--white); border: 1.5px solid var(--line); border-radius: 10px; padding: 8px; cursor: pointer; transition: border-color .2s; }
+.cal-cell:hover { border-color: var(--rose); }
+.cal-cell.today { border-color: var(--rose); background: #fff8f5; }
+.cal-cell.other-month { opacity: .4; }
+.cal-cell__date { font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; }
+.cal-cell__dot { display: inline-block; width: 6px; height: 6px; background: #FFC107; border-radius: 50%; margin: 1px; }
+.cal-cell__dot.confirmed { background: #4CAF50; }
+.cal-cell__dot.cancelled { background: #E53935; }
+
+/* 캘린더 상세 */
+.cal-detail { background: var(--white); border: 1.5px solid var(--line); border-radius: 16px; padding: 20px; margin-top: 20px; display: none; }
+.cal-detail.show { display: block; }
+.cal-detail__title { font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; }
+.cal-item { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.88rem; display: flex; justify-content: space-between; align-items: center; }
+.cal-item:last-child { border-bottom: none; }
+
+/* ── 수정 모달 ── */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(43,37,33,.4); z-index: 200; align-items: center; justify-content: center; padding: 24px; }
+.modal-bg.show { display: flex; }
+.modal { background: var(--white); border-radius: 20px; padding: 32px; width: 100%; max-width: 460px; }
+.modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 24px; }
+.modal .field { margin-bottom: 16px; }
+.modal .field label { display: block; font-size: 0.82rem; font-weight: 500; margin-bottom: 6px; }
+.modal .field input, .modal .field select { width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 10px; font-family: var(--sans); font-size: 0.9rem; outline: none; background: var(--white); color: var(--ink); }
+.modal .field input:focus, .modal .field select:focus { border-color: var(--rose); }
+.modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+.modal-btns button { flex: 1; padding: 12px; border-radius: 999px; font-family: var(--sans); font-size: 0.9rem; font-weight: 500; cursor: pointer; border: none; }
+.btn-save { background: var(--rose); color: #fff; }
+.btn-close { background: var(--cream-deep); color: var(--ink); }
+
+.empty-msg { text-align: center; padding: 40px; color: var(--ink-soft); font-size: 0.9rem; }
+
+@media (max-width: 600px) {
+  .tab-nav__item { padding: 12px 12px; font-size: 0.8rem; }
+  th, td { padding: 10px 10px; font-size: 0.8rem; }
+  .dashboard-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── 로그인 ── -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="login-logo">Genie<span>Beauty</span></div>
+    <p class="login-sub">관리자 전용 페이지</p>
+    <div class="login-field">
+      <label>아이디</label>
+      <input type="text" id="loginId" placeholder="아이디 입력" />
+    </div>
+    <div class="login-field">
+      <label>비밀번호</label>
+      <input type="password" id="loginPw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter') doLogin()" />
+    </div>
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <p class="login-error" id="loginError">아이디 또는 비밀번호가 올바르지 않습니다.</p>
+  </div>
+</div>
+
+<!-- ── 앱 ── -->
+<div id="app">
+  <div class="header">
+    <div class="header__logo">Genie<span>Beauty</span> <span style="font-size:.75rem;color:var(--ink-soft);font-family:var(--sans);font-style:normal;">관리자</span></div>
+    <div class="header__right">
+      <span class="header__user">👤 admin</span>
+      <button class="header__logout" onclick="doLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-nav__item active" onclick="showTab('dashboard')">대시보드</button>
+    <button class="tab-nav__item" onclick="showTab('reservations')" id="tabReservations">예약 관리</button>
+    <button class="tab-nav__item" onclick="showTab('calendar')">캘린더</button>
+  </div>
+
+  <div class="content">
+
+    <!-- 대시보드 -->
+    <div id="tab-dashboard">
+      <div class="dashboard-grid" id="statGrid"></div>
+      <p class="section-title">취소 요청 대기</p>
+      <div id="cancelRequests"></div>
+      <p class="section-title" style="margin-top:28px;">최근 예약 5건</p>
+      <div id="recentList"></div>
+    </div>
+
+    <!-- 예약 관리 -->
+    <div id="tab-reservations" style="display:none;">
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterReservations('all', this)">전체</button>
+        <button class="filter-btn" onclick="filterReservations('pending', this)">예약 대기</button>
+        <button class="filter-btn" onclick="filterReservations('cancel_requested', this)">취소 요청</button>
+        <button class="filter-btn" onclick="filterReservations('cancelled', this)">취소됨</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>예약코드</th><th>이름</th><th>연락처</th><th>시술</th><th>날짜</th><th>상태</th><th>관리</th></tr></thead>
+          <tbody id="reservationTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 캘린더 -->
+    <div id="tab-calendar" style="display:none;">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="changeMonth(-1)">◀ 이전</button>
+        <h2 id="calTitle"></h2>
+        <button class="cal-nav" onclick="changeMonth(1)">다음 ▶</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-detail" id="calDetail">
+        <p class="cal-detail__title" id="calDetailTitle"></p>
+        <div id="calDetailList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 수정 모달 -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2>예약 수정</h2>
+    <div class="field"><label>이름</label><input type="text" id="mName" /></div>
+    <div class="field"><label>연락처</label><input type="tel" id="mPhone" /></div>
+    <div class="field"><label>시술</label>
+      <select id="mService">
+        <option>눈썹문신</option><option>피부미용</option><option>염색</option><option>기타 상담</option>
+      </select>
+    </div>
+    <div class="field"><label>희망 날짜</label><input type="date" id="mDate" /></div>
+    <div class="field"><label>시술 시간 <span style="font-size:.75rem;color:#aaa;font-weight:400;">· 고객과 통화 후 입력</span></label><input type="time" id="mTime" /></div>
+    <div class="modal-btns">
+      <button class="btn-close" onclick="closeModal()">닫기</button>
+      <button class="btn-save" onclick="saveEdit(false)">저장</button>
+      <button class="btn-save" style="background:#4CAF50;" onclick="saveEdit(true)">예약 확정</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://dxnhcntvckhexyresxsv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_5fimW-Tc9PgTXt63n8ZQ8g_6QrEP_SG';
+const WEB3FORMS_KEY = '6114541f-3206-4da6-8c5b-606326dd5bfe';
+const ADMIN_ID = 'admin';
+const ADMIN_PW = 'Qwer213600!@';
+
+let allReservations = [];
+let editingCode = null;
+let calYear, calMonth;
+
+/* ── 로그인 ── */
+function doLogin() {
+  const id = document.getElementById('loginId').value.trim();
+  const pw = document.getElementById('loginPw').value;
+  if (id === ADMIN_ID && pw === ADMIN_PW) {
+    sessionStorage.setItem('gb_admin', '1');
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    init();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('gb_admin');
+  location.reload();
+}
+
+if (sessionStorage.getItem('gb_admin')) {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  init();
+}
+
+/* ── Supabase ── */
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, ...(options.headers || {}) },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+/* ── 초기화 ── */
+async function init() {
+  allReservations = await sbFetch('reservations?select=*&order=created_at.desc') || [];
+  renderDashboard();
+  const now = new Date();
+  calYear = now.getFullYear(); calMonth = now.getMonth();
+  renderCalendar();
+}
+
+/* ── 탭 ── */
+function showTab(tab) {
+  ['dashboard','reservations','calendar'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab-nav__item').forEach((btn, i) => {
+    btn.classList.toggle('active', ['dashboard','reservations','calendar'][i] === tab);
+  });
+  if (tab === 'reservations') renderTable('all');
+}
+
+/* ── 유틸 ── */
+function fmtDate(d) { if (!d) return '-'; const [y,m,dd] = d.split('-'); return `${y}.${m}.${dd}`; }
+function statusLabel(s) {
+  if (s === 'confirmed') return '<span class="status-badge confirmed">예약 확정</span>';
+  if (s === 'cancel_requested') return '<span class="status-badge cancel_requested">취소 요청</span>';
+  if (s === 'cancelled') return '<span class="status-badge cancelled">취소됨</span>';
+  return '<span class="status-badge pending">예약 대기</span>';
+}
+
+/* ── 대시보드 ── */
+function renderDashboard() {
+  const today = new Date().toISOString().split('T')[0];
+  const weekLater = new Date(Date.now() + 7*86400000).toISOString().split('T')[0];
+  const todayCount = allReservations.filter(r => r.date === today && r.status !== 'cancelled').length;
+  const weekCount = allReservations.filter(r => r.date >= today && r.date <= weekLater && r.status !== 'cancelled').length;
+  const cancelReqCount = allReservations.filter(r => r.status === 'cancel_requested').length;
+  const totalActive = allReservations.filter(r => r.status !== 'cancelled').length;
+
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-card__label">오늘 예약</div><div class="stat-card__value">${todayCount}건</div><div class="stat-card__sub">${today}</div></div>
+    <div class="stat-card"><div class="stat-card__label">이번 주 예약</div><div class="stat-card__value">${weekCount}건</div><div class="stat-card__sub">7일 이내</div></div>
+    <div class="stat-card"><div class="stat-card__label">취소 요청</div><div class="stat-card__value ${cancelReqCount > 0 ? 'alert' : ''}">${cancelReqCount}건</div><div class="stat-card__sub">승인 대기 중</div></div>
+    <div class="stat-card"><div class="stat-card__label">전체 활성 예약</div><div class="stat-card__value">${totalActive}건</div><div class="stat-card__sub">취소 제외</div></div>
+  `;
+
+  /* 취소 요청 목록 */
+  const reqs = allReservations.filter(r => r.status === 'cancel_requested');
+  document.getElementById('cancelRequests').innerHTML = reqs.length === 0
+    ? '<p class="empty-msg">취소 요청이 없습니다.</p>'
+    : `<div class="table-wrap"><table><thead><tr><th>이름</th><th>연락처</th><th>시술</th><th>날짜</th><th>처리</th></tr></thead><tbody>${
+        reqs.map(r => `<tr><td>${r.name}</td><td>${r.phone}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td><td>
+          <button class="action-btn cancel" onclick="confirmCancel('${r.code}')">취소 확정</button>
+          <button class="action-btn edit" onclick="rejectCancel('${r.code}')">요청 거절</button>
+        </td></tr>`).join('')
+      }</tbody></table></div>`;
+
+  /* 최근 5건 */
+  const recent = allReservations.slice(0, 5);
+  document.getElementById('recentList').innerHTML = recent.length === 0
+    ? '<p class="empty-msg">예약이 없습니다.</p>'
+    : `<div class="table-wrap"><table><thead><tr><th>이름</th><th>시술</th><th>날짜</th><th>상태</th></tr></thead><tbody>${
+        recent.map(r => `<tr><td>${r.name}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td><td>${statusLabel(r.status)}</td></tr>`).join('')
+      }</tbody></table></div>`;
+
+  /* 취소요청 뱃지 */
+  const badge = cancelReqCount > 0 ? `<span class="badge">${cancelReqCount}</span>` : '';
+  document.getElementById('tabReservations').innerHTML = `예약 관리${badge}`;
+}
+
+/* ── 예약 목록 ── */
+function renderTable(filter) {
+  const data = filter === 'all' ? allReservations : allReservations.filter(r => r.status === filter);
+  document.getElementById('reservationTable').innerHTML = data.length === 0
+    ? `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--ink-soft);">예약이 없습니다.</td></tr>`
+    : data.map(r => `<tr>
+        <td style="font-size:.78rem;color:var(--ink-soft);">${r.code}</td>
+        <td>${r.name}</td><td>${r.phone}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td>
+        <td>${statusLabel(r.status)}</td>
+        <td>
+          ${r.status !== 'cancelled' ? `<button class="action-btn edit" onclick="openModal('${r.code}')">수정</button>` : ''}
+          ${r.status !== 'cancelled' ? `<button class="action-btn cancel" onclick="confirmCancel('${r.code}')">취소</button>` : ''}
+        </td>
+      </tr>`).join('');
+}
+
+function filterReservations(filter, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable(filter);
+}
+
+/* ── 수정 모달 ── */
+function openModal(code) {
+  const r = allReservations.find(r => r.code === code);
+  if (!r) return;
+  editingCode = code;
+  document.getElementById('mName').value = r.name;
+  document.getElementById('mPhone').value = r.phone;
+  document.getElementById('mService').value = r.service;
+  document.getElementById('mDate').value = r.date;
+  document.getElementById('mTime').value = r.time || '';
+  document.getElementById('modalBg').classList.add('show');
+}
+function closeModal() { document.getElementById('modalBg').classList.remove('show'); editingCode = null; }
+
+async function saveEdit(isConfirm = false) {
+  const name = document.getElementById('mName').value.trim();
+  const phone = document.getElementById('mPhone').value.trim();
+  const service = document.getElementById('mService').value;
+  const date = document.getElementById('mDate').value;
+  const time = document.getElementById('mTime').value;
+  if (!name || !phone || !service || !date) { alert('모든 항목을 입력해 주세요.'); return; }
+  if (isConfirm && !time) { alert('예약 확정 시 시술 시간을 입력해 주세요.'); return; }
+  try {
+    const body = { name, phone, service, date, time: time || null, status: isConfirm ? 'confirmed' : 'pending' };
+    await sbFetch(`reservations?code=eq.${editingCode}`, {
+      method: 'PATCH', headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify(body),
+    });
+    const idx = allReservations.findIndex(r => r.code === editingCode);
+    if (idx > -1) allReservations[idx] = { ...allReservations[idx], ...body };
+    closeModal(); renderDashboard(); renderTable('all');
+    alert(isConfirm ? '예약이 확정되었습니다! ✅' : '예약이 수정되었습니다.');
+  } catch (e) { alert('수정 중 오류가 발생했습니다: ' + e.message); }
+}
+
+/* ── 취소 처리 ── */
+async function confirmCancel(code) {
+  if (!confirm('이 예약을 취소 처리하시겠습니까?')) return;
+  try {
+    await sbFetch(`reservations?code=eq.${code}`, {
+      method: 'PATCH', headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({ status: 'cancelled' }),
+    });
+    const idx = allReservations.findIndex(r => r.code === code);
+    if (idx > -1) allReservations[idx].status = 'cancelled';
+    renderDashboard(); renderTable('all');
+    alert('취소 처리가 완료되었습니다.');
+  } catch { alert('처리 중 오류가 발생했습니다.'); }
+}
+
+async function rejectCancel(code) {
+  if (!confirm('취소 요청을 거절하고 예약 대기 상태로 되돌리시겠습니까?')) return;
+  try {
+    await sbFetch(`reservations?code=eq.${code}`, {
+      method: 'PATCH', headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify({ status: 'pending' }),
+    });
+    const idx = allReservations.findIndex(r => r.code === code);
+    if (idx > -1) allReservations[idx].status = 'pending';
+    renderDashboard(); renderTable('all');
+    alert('취소 요청이 거절되었습니다.');
+  } catch { alert('처리 중 오류가 발생했습니다.'); }
+}
+
+/* ── 캘린더 ── */
+function renderCalendar() {
+  const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('calTitle').textContent = `${calYear}년 ${months[calMonth]}`;
+  const days = ['일','월','화','수','목','금','토'];
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const last = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date().toISOString().split('T')[0];
+
+  let html = days.map(d => `<div class="cal-day-label">${d}</div>`).join('');
+
+  for (let i = 0; i < first; i++) {
+    const prevLast = new Date(calYear, calMonth, 0).getDate();
+    html += `<div class="cal-cell other-month"><div class="cal-cell__date">${prevLast - first + i + 1}</div></div>`;
+  }
+
+  for (let d = 1; d <= last; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayRes = allReservations.filter(r => r.date === dateStr && r.status !== 'cancelled');
+    const rCount = dayRes.length;
+    const isToday = dateStr === today;
+    const dots = dayRes.slice(0, 5).map(r => `<span class="cal-cell__dot ${r.status === 'confirmed' ? 'confirmed' : r.status === 'cancelled' ? 'cancelled' : ''}"></span>`).join('');
+    html += `<div class="cal-cell ${isToday ? 'today' : ''}" onclick="showCalDetail('${dateStr}')">
+      <div class="cal-cell__date">${d}</div>${dots}
+      ${rCount > 0 ? `<div style="font-size:.7rem;color:var(--rose);margin-top:2px;">${rCount}건</div>` : ''}
+    </div>`;
+  }
+
+  const remaining = (7 - ((first + last) % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    html += `<div class="cal-cell other-month"><div class="cal-cell__date">${i}</div></div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML = html;
+  document.getElementById('calDetail').classList.remove('show');
+}
+
+function changeMonth(dir) { calMonth += dir; if (calMonth < 0) { calMonth = 11; calYear--; } if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+
+function showCalDetail(dateStr) {
+  const [y,m,d] = dateStr.split('-');
+  const list = allReservations.filter(r => r.date === dateStr && r.status !== 'cancelled');
+  const detail = document.getElementById('calDetail');
+  document.getElementById('calDetailTitle').textContent = `${y}년 ${m}월 ${d}일 예약 ${list.length}건`;
+  document.getElementById('calDetailList').innerHTML = list.length === 0
+    ? '<p style="color:var(--ink-soft);font-size:.88rem;padding:8px 0;">이 날 예약이 없습니다.</p>'
+    : list.map(r => `<div class="cal-item"><span>${r.time ? r.time + ' · ' : ''}${r.name} · ${r.service} · ${r.phone}</span>${statusLabel(r.status)}</div>`).join('');
+  detail.classList.add('show');
+}
+
+/* 연락처 자동 하이픈 */
+document.getElementById('mPhone').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length < 4) e.target.value = v;
+  else if (v.length < 8) e.target.value = v.slice(0,3) + '-' + v.slice(3);
+  else e.target.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
+});
+</script>
+</body>
+</html>
