@@ -230,6 +230,12 @@ ul { list-style: none; }
 .service-card__foot .label { font-size: 0.8rem; color: var(--ink-soft); }
 .service-card__price { font-family: var(--serif); font-size: 1.45rem; color: var(--rose-deep); }
 .service-card__price small { font-size: 0.8rem; color: var(--ink-soft); font-family: var(--sans); margin-left: 2px; }
+.service-card__meta { font-size: 0.8rem; color: var(--ink-soft); margin-top: 14px; }
+.service-card__placeholder {
+  width: 100%; height: 100%; background: linear-gradient(135deg, #F5EFE8 0%, #EDE4D8 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+}
+.service-card__placeholder span { font-size: 0.8rem; color: var(--taupe); letter-spacing: .05em; }
 
 /* =========================================================
    4) 포트폴리오 — Before & After 갤러리
@@ -470,6 +476,7 @@ ul { list-style: none; }
           <h3>눈썹문신</h3>
           <p class="en">Eyebrow Tattoo</p>
           <p>얼굴형과 인상에 맞춘 1:1 디자인. 자연스러운 결 표현으로 화장한 듯 또렷하면서도 부담 없는 눈썹을 완성합니다.</p>
+          <div class="service-card__meta">⏱ 소요시간 약 1시간 30분 (마취 포함)</div>
           <div class="service-card__foot">
             <span class="label">자연눈썹 · 콤보 기준</span>
             <span class="service-card__price">150,000<small>원~</small></span>
@@ -481,14 +488,18 @@ ul { list-style: none; }
       <article class="service-card reveal">
         <div class="service-card__img">
           <span class="service-card__no">02</span>
-          <img src="https://picsum.photos/id/1062/640/480" alt="피부미용 관리" loading="lazy" />
+          <div class="service-card__placeholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(176,151,133,0.6)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            <span>사진 준비 중</span>
+          </div>
         </div>
         <div class="service-card__body">
           <h3>피부미용</h3>
           <p class="en">Skin Care</p>
           <p>피부 상태를 꼼꼼히 진단하고 맞춤 관리를 제안합니다. 딥클렌징부터 진정·보습 케어까지, 맑고 건강한 피부결로.</p>
+          <div class="service-card__meta">⏱ 소요시간 미정 (메뉴 추가 예정)</div>
           <div class="service-card__foot">
-            <span class="label">기본 관리 · 60분 기준</span>
+            <span class="label">기본 관리 · 메뉴 업데이트 예정</span>
             <span class="service-card__price">80,000<small>원~</small></span>
           </div>
         </div>
@@ -504,6 +515,7 @@ ul { list-style: none; }
           <h3>염색</h3>
           <p class="en">Hair Coloring</p>
           <p>퍼스널컬러와 두피 컨디션을 고려한 컬러 처방. 손상은 줄이고 발색은 살린, 오래도록 예쁜 컬러를 연출합니다.</p>
+          <div class="service-card__meta">⏱ 소요시간 약 1시간 30분 ~ 2시간 (모발 상태에 따라 다름)</div>
           <div class="service-card__foot">
             <span class="label">뿌리·전체 염색 기준</span>
             <span class="service-card__price">70,000<small>원~</small></span>
