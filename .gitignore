@@ -10,3 +10,5 @@ design_extracted/
 
 # 기타
 .claude/
+docx_tmp/
+*.docx
