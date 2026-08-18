@@ -318,6 +318,14 @@ ul { list-style: none; }
 }
 .form__kakao:hover { filter: brightness(.95); }
 .form__note { font-size: 0.76rem; color: var(--ink-soft); text-align: center; margin-top: 16px; }
+.consent-box { background: var(--cream-deep); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-top: 20px; }
+.consent-box__title { font-size: 0.86rem; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+.consent-box__table { width: 100%; font-size: 0.78rem; color: var(--ink-soft); border-collapse: collapse; }
+.consent-box__table td { padding: 4px 0; vertical-align: top; }
+.consent-box__table td:first-child { width: 88px; color: var(--ink); font-weight: 500; white-space: nowrap; }
+.consent-box__note { font-size: 0.75rem; color: var(--ink-soft); margin-top: 10px; line-height: 1.5; }
+.consent-check { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; font-size: 0.82rem; color: var(--ink); cursor: pointer; }
+.consent-check input { margin-top: 3px; accent-color: var(--rose); flex-shrink: 0; }
 .code-result { display: none; margin-top: 20px; background: #fff8f5; border: 2px solid var(--rose); border-radius: 16px; padding: 24px 16px; text-align: center; max-width: 100%; overflow: hidden; }
 .code-result.show { display: block; }
 .code-result__title { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 8px; }
@@ -761,6 +769,19 @@ ul { list-style: none; }
             <input type="date" id="date" name="date" required />
           </div>
         </div>
+        <div class="consent-box">
+          <p class="consent-box__title">개인정보 수집·이용 동의</p>
+          <table class="consent-box__table">
+            <tr><td>수집 목적</td><td>예약 확인 및 시술 안내 연락, 방문 이력(재방문 횟수) 관리, 재방문 안내 연락(약 6개월 주기)</td></tr>
+            <tr><td>수집 항목</td><td>이름, 휴대전화번호</td></tr>
+            <tr><td>보유·이용기간</td><td>최종 방문일로부터 2년 또는 동의 철회 시까지</td></tr>
+          </table>
+          <p class="consent-box__note">귀하는 위 개인정보 제공에 동의하지 않으실 권리가 있습니다. 다만 동의 거부 시 예약 서비스 이용이 제한될 수 있습니다.</p>
+          <label class="consent-check">
+            <input type="checkbox" id="privacyConsent" required />
+            <span>위 개인정보 수집·이용에 동의합니다. (필수)</span>
+          </label>
+        </div>
         <button type="submit" class="btn btn-primary form__submit">예약 문의 보내기</button>
         <a href="#" class="form__kakao" id="kakaoBtn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="#391B1B" aria-hidden="true"><path d="M12 3C6.48 3 2 6.58 2 11c0 2.83 1.9 5.31 4.76 6.71-.21.74-.76 2.7-.87 3.12-.14.52.19.51.4.37.17-.11 2.66-1.81 3.74-2.55.64.09 1.3.14 1.97.14 5.52 0 10-3.58 10-8S17.52 3 12 3z"/></svg>
@@ -910,6 +931,11 @@ form.addEventListener('submit', async (e) => {
 
   if (!name || !phone || !service || !date) {
     alert('모든 항목을 입력해 주세요.');
+    return;
+  }
+
+  if (!document.getElementById('privacyConsent').checked) {
+    alert('개인정보 수집·이용에 동의해 주세요.');
     return;
   }
 
