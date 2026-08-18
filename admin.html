@@ -221,7 +221,12 @@ tr:hover td { background: #fdf9f6; }
       </select>
     </div>
     <div class="field"><label>날짜</label><input type="date" id="aDt" /></div>
-    <div class="field"><label>시간</label><input type="time" id="aTm" step="600" /></div>
+    <div class="field"><label>시간</label>
+      <div style="display:flex;gap:8px;">
+        <select id="aTmH" style="flex:1;"></select>
+        <select id="aTmM" style="flex:1;"></select>
+      </div>
+    </div>
     <div class="modal-btns">
       <button class="btn-close" onclick="closeAddModal()">닫기</button>
       <button class="btn-save" onclick="submitAdd(false)">대기로 저장</button>
@@ -242,7 +247,12 @@ tr:hover td { background: #fdf9f6; }
       </select>
     </div>
     <div class="field"><label>희망 날짜</label><input type="date" id="mDate" /></div>
-    <div class="field"><label>시술 시간 <span style="font-size:.75rem;color:#aaa;font-weight:400;">· 고객과 통화 후 입력</span></label><input type="time" id="mTime" step="600" /></div>
+    <div class="field"><label>시술 시간 <span style="font-size:.75rem;color:#aaa;font-weight:400;">· 고객과 통화 후 입력</span></label>
+      <div style="display:flex;gap:8px;">
+        <select id="mTimeH" style="flex:1;"></select>
+        <select id="mTimeM" style="flex:1;"></select>
+      </div>
+    </div>
     <div class="modal-btns">
       <button class="btn-close" onclick="closeModal()">닫기</button>
       <button class="btn-save" onclick="saveEdit(false)">저장</button>
@@ -418,7 +428,9 @@ function openModal(code) {
   document.getElementById('mPhone').value = r.phone;
   document.getElementById('mService').value = r.service;
   document.getElementById('mDate').value = r.date;
-  document.getElementById('mTime').value = r.time || '';
+  const [mh, mm] = (r.time || '').split(':');
+  document.getElementById('mTimeH').value = mh || '';
+  document.getElementById('mTimeM').value = mm || '';
   document.getElementById('modalBg').classList.add('show');
 }
 function closeModal() { document.getElementById('modalBg').classList.remove('show'); editingCode = null; }
@@ -428,7 +440,8 @@ async function saveEdit(isConfirm = false) {
   const phone = document.getElementById('mPhone').value.trim();
   const service = document.getElementById('mService').value;
   const date = document.getElementById('mDate').value;
-  const time = document.getElementById('mTime').value;
+  const mh = document.getElementById('mTimeH').value, mm = document.getElementById('mTimeM').value;
+  const time = (mh && mm) ? `${mh}:${mm}` : '';
   if (!name || !phone || !service || !date) { alert('모든 항목을 입력해 주세요.'); return; }
   if (isConfirm && !time) { alert('예약 확정 시 시술 시간을 입력해 주세요.'); return; }
   try {
@@ -451,7 +464,8 @@ function openAddModal() {
   document.getElementById('aPh').value = '';
   document.getElementById('aSv').value = '눈썹문신';
   document.getElementById('aDt').value = '';
-  document.getElementById('aTm').value = '';
+  document.getElementById('aTmH').value = '';
+  document.getElementById('aTmM').value = '';
   document.getElementById('addModalBg').classList.add('show');
 }
 function closeAddModal() { document.getElementById('addModalBg').classList.remove('show'); }
@@ -461,7 +475,8 @@ async function submitAdd(isConfirm) {
   const phone = document.getElementById('aPh').value.trim();
   const service = document.getElementById('aSv').value;
   const date = document.getElementById('aDt').value;
-  const time = document.getElementById('aTm').value;
+  const ah = document.getElementById('aTmH').value, am = document.getElementById('aTmM').value;
+  const time = (ah && am) ? `${ah}:${am}` : '';
   if (!date) { alert('날짜는 입력해 주세요.'); return; }
   const now = new Date();
   const code = `ADD${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
@@ -564,6 +579,20 @@ document.getElementById('mPhone').addEventListener('input', (e) => {
   else if (v.length < 8) e.target.value = v.slice(0,3) + '-' + v.slice(3);
   else e.target.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
 });
+
+/* 시술 시간 선택 (10분 단위) */
+(function populateTimeSelects() {
+  const hourOpts = '<option value="">시</option>' + Array.from({length: 24}, (_, h) => {
+    const v = String(h).padStart(2, '0');
+    return `<option value="${v}">${v}시</option>`;
+  }).join('');
+  const minOpts = '<option value="">분</option>' + [0,10,20,30,40,50].map(m => {
+    const v = String(m).padStart(2, '0');
+    return `<option value="${v}">${v}분</option>`;
+  }).join('');
+  ['aTmH', 'mTimeH'].forEach(id => document.getElementById(id).innerHTML = hourOpts);
+  ['aTmM', 'mTimeM'].forEach(id => document.getElementById(id).innerHTML = minOpts);
+})();
 </script>
 </body>
 </html>
