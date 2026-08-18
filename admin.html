@@ -221,7 +221,7 @@ tr:hover td { background: #fdf9f6; }
       </select>
     </div>
     <div class="field"><label>날짜</label><input type="date" id="aDt" /></div>
-    <div class="field"><label>시간</label><input type="time" id="aTm" /></div>
+    <div class="field"><label>시간</label><input type="time" id="aTm" step="600" /></div>
     <div class="modal-btns">
       <button class="btn-close" onclick="closeAddModal()">닫기</button>
       <button class="btn-save" onclick="submitAdd(false)">대기로 저장</button>
@@ -242,7 +242,7 @@ tr:hover td { background: #fdf9f6; }
       </select>
     </div>
     <div class="field"><label>희망 날짜</label><input type="date" id="mDate" /></div>
-    <div class="field"><label>시술 시간 <span style="font-size:.75rem;color:#aaa;font-weight:400;">· 고객과 통화 후 입력</span></label><input type="time" id="mTime" /></div>
+    <div class="field"><label>시술 시간 <span style="font-size:.75rem;color:#aaa;font-weight:400;">· 고객과 통화 후 입력</span></label><input type="time" id="mTime" step="600" /></div>
     <div class="modal-btns">
       <button class="btn-close" onclick="closeModal()">닫기</button>
       <button class="btn-save" onclick="saveEdit(false)">저장</button>
@@ -301,10 +301,29 @@ async function sbFetch(path, options = {}) {
 /* ── 초기화 ── */
 async function init() {
   allReservations = await sbFetch('reservations?select=*&order=created_at.desc') || [];
+  computeVisitNumbers();
   renderDashboard();
   const now = new Date();
   calYear = now.getFullYear(); calMonth = now.getMonth();
   renderCalendar();
+}
+
+/* ── 방문 횟수 계산 (전화번호 기준, 취소 제외, 날짜순) ── */
+function computeVisitNumbers() {
+  const groups = {};
+  allReservations.forEach(r => { r._visitNo = null; });
+  allReservations.filter(r => r.status !== 'cancelled' && r.phone && r.phone !== '미입력').forEach(r => {
+    (groups[r.phone] = groups[r.phone] || []).push(r);
+  });
+  Object.values(groups).forEach(list => {
+    list.sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.created_at || '').localeCompare(b.created_at || ''));
+    list.forEach((r, i) => { r._visitNo = i + 1; r._visitTotal = list.length; });
+  });
+}
+
+function visitBadge(r) {
+  if (!r._visitNo) return '';
+  return ` <span style="font-size:.72rem;color:var(--taupe);">(${r._visitNo}번째)</span>`;
 }
 
 /* ── 탭 ── */
@@ -359,7 +378,7 @@ function renderDashboard() {
   document.getElementById('recentList').innerHTML = recent.length === 0
     ? '<p class="empty-msg">예약이 없습니다.</p>'
     : `<div class="table-wrap"><table><thead><tr><th>이름</th><th>시술</th><th>날짜</th><th>신청일</th><th>상태</th></tr></thead><tbody>${
-        recent.map(r => `<tr><td>${r.name}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td><td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td><td>${statusLabel(r.status)}</td></tr>`).join('')
+        recent.map(r => `<tr><td>${r.name}${visitBadge(r)}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td><td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td><td>${statusLabel(r.status)}</td></tr>`).join('')
       }</tbody></table></div>`;
 
   /* 취소요청 뱃지 */
@@ -374,7 +393,7 @@ function renderTable(filter) {
     ? `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--ink-soft);">예약이 없습니다.</td></tr>`
     : data.map(r => `<tr>
         <td style="font-size:.78rem;color:var(--ink-soft);">${r.code}</td>
-        <td>${r.name}</td><td>${r.phone}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td>
+        <td>${r.name}${visitBadge(r)}</td><td>${r.phone}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td>
         <td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td>
         <td>${statusLabel(r.status)}</td>
         <td>
@@ -420,6 +439,7 @@ async function saveEdit(isConfirm = false) {
     });
     const idx = allReservations.findIndex(r => r.code === editingCode);
     if (idx > -1) allReservations[idx] = { ...allReservations[idx], ...body };
+    computeVisitNumbers();
     closeModal(); renderDashboard(); renderTable('all');
     alert(isConfirm ? '예약이 확정되었습니다! ✅' : '예약이 수정되었습니다.');
   } catch (e) { alert('수정 중 오류가 발생했습니다: ' + e.message); }
@@ -450,6 +470,7 @@ async function submitAdd(isConfirm) {
     const result = await sbFetch('reservations', { method: 'POST', headers: { 'Prefer': 'return=representation' }, body: JSON.stringify(body) });
     const newRes = Array.isArray(result) ? result[0] : body;
     allReservations.unshift(newRes);
+    computeVisitNumbers();
     closeAddModal(); renderDashboard(); renderTable('all');
     alert(`전화예약이 추가되었습니다! ✅\n예약코드: ${code}`);
   } catch (e) { alert('저장 중 오류가 발생했습니다: ' + e.message); }
@@ -465,6 +486,7 @@ async function confirmCancel(code) {
     });
     const idx = allReservations.findIndex(r => r.code === code);
     if (idx > -1) allReservations[idx].status = 'cancelled';
+    computeVisitNumbers();
     renderDashboard(); renderTable('all');
     alert('취소 처리가 완료되었습니다.');
   } catch { alert('처리 중 오류가 발생했습니다.'); }
@@ -479,6 +501,7 @@ async function rejectCancel(code) {
     });
     const idx = allReservations.findIndex(r => r.code === code);
     if (idx > -1) allReservations[idx].status = 'pending';
+    computeVisitNumbers();
     renderDashboard(); renderTable('all');
     alert('취소 요청이 거절되었습니다.');
   } catch { alert('처리 중 오류가 발생했습니다.'); }
@@ -530,7 +553,7 @@ function showCalDetail(dateStr) {
   document.getElementById('calDetailTitle').textContent = `${y}년 ${m}월 ${d}일 예약 ${list.length}건`;
   document.getElementById('calDetailList').innerHTML = list.length === 0
     ? '<p style="color:var(--ink-soft);font-size:.88rem;padding:8px 0;">이 날 예약이 없습니다.</p>'
-    : list.map(r => `<div class="cal-item"><span>${r.time ? r.time + ' · ' : ''}${r.name} · ${r.service} · ${r.phone}</span>${statusLabel(r.status)}</div>`).join('');
+    : list.map(r => `<div class="cal-item"><span>${r.time ? r.time + ' · ' : ''}${r.name}${visitBadge(r)} · ${r.service} · ${r.phone}</span>${statusLabel(r.status)}</div>`).join('');
   detail.classList.add('show');
 }
 
