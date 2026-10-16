@@ -130,6 +130,10 @@ body { font-family: var(--sans); background: #FAF6F0 !important; color: #2B2521 
       <label for="codeInput">예약 코드 12자리</label>
       <input type="text" id="codeInput" placeholder="예) 202606061234" maxlength="12" inputmode="numeric" />
     </div>
+    <div class="field">
+      <label for="codePhoneInput">예약 시 등록한 연락처 <span style="font-size:0.75rem;font-weight:400;color:#aaa;">· 본인 확인용</span></label>
+      <input type="tel" id="codePhoneInput" placeholder="010-0000-0000" maxlength="13" />
+    </div>
     <button class="btn btn-primary" id="searchBtn" onclick="searchByCode()">예약 조회하기</button>
 
     <!-- 결과 카드 -->
@@ -198,15 +202,16 @@ const WEB3FORMS_KEY = '6114541f-3206-4da6-8c5b-606326dd5bfe';
 let currentReservation = null;
 
 /* ───── 공통 유틸 ───── */
-async function sbFetch(path, options = {}) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    ...options,
+/* 테이블을 직접 읽지 않고 DB 함수(rpc)만 호출한다 */
+async function sbRpc(fn, args) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'apikey': SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
-      ...(options.headers || {}),
     },
+    body: JSON.stringify(args),
   });
   if (!res.ok) throw new Error(await res.text());
   const text = await res.text();
@@ -239,19 +244,21 @@ function switchTab(tab) {
 /* ───── 코드로 조회 ───── */
 async function searchByCode() {
   const code = document.getElementById('codeInput').value.trim();
+  const phone = document.getElementById('codePhoneInput').value.trim();
   if (!code || code.length < 10) { alert('예약 코드를 정확히 입력해 주세요.'); return; }
+  if (phone.replace(/\D/g, '').length < 10) { alert('예약 시 등록한 연락처를 정확히 입력해 주세요.'); return; }
 
   const btn = document.getElementById('searchBtn');
   btn.disabled = true; btn.textContent = '조회 중...';
 
   try {
-    const data = await sbFetch(`reservations?code=eq.${code}&select=*`);
-    if (!data || data.length === 0) {
+    const data = await sbRpc('get_reservation', { p_code: code, p_phone: phone });
+    if (!data) {
       document.getElementById('resultCard').classList.remove('show');
-      alert('해당 예약 코드를 찾을 수 없습니다.');
+      alert('예약 코드 또는 연락처가 일치하는 예약을 찾을 수 없습니다.');
       return;
     }
-    currentReservation = data[0];
+    currentReservation = data;
     renderCard(currentReservation);
   } catch {
     alert('조회 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
@@ -330,10 +337,13 @@ async function submitEdit() {
   if (!name || !phone || !service || !date) { alert('모든 항목을 입력해 주세요.'); return; }
 
   try {
-    await sbFetch(`reservations?code=eq.${currentReservation.code}`, {
-      method: 'PATCH',
-      headers: { 'Prefer': 'return=representation' },
-      body: JSON.stringify({ name, phone, service, date }),
+    await sbRpc('update_reservation', {
+      p_code: currentReservation.code,
+      p_phone: currentReservation.phone,
+      p_name: name,
+      p_new_phone: phone,
+      p_service: service,
+      p_date: date,
     });
 
     /* 사장님 이메일 알림 */
@@ -361,15 +371,14 @@ async function requestCancel() {
   if (!confirm('예약 취소를 요청하시겠습니까?\n사장님 확인 후 취소가 완료됩니다.')) return;
 
   try {
-    await sbFetch(`reservations?code=eq.${currentReservation.code}`, {
-      method: 'PATCH',
-      headers: { 'Prefer': 'return=representation' },
-      body: JSON.stringify({ status: 'cancel_requested' }),
+    await sbRpc('request_cancel_reservation', {
+      p_code: currentReservation.code,
+      p_phone: currentReservation.phone,
     });
 
-    /* 사장님 이메일 — 취소 확인 링크 포함 */
+    /* 사장님 이메일 — 관리자 페이지 링크 포함 (취소 승인은 관리자 로그인 후 처리) */
     const base = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-    const confirmUrl = `${base}cancel-confirm.html?token=${currentReservation.cancel_token}`;
+    const confirmUrl = `${base}admin.html#cancel`;
     await fetch('https://api.web3forms.com/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -399,7 +408,7 @@ async function searchByPhone() {
   if (!phone) { alert('연락처를 입력해 주세요.'); return; }
 
   try {
-    const data = await sbFetch(`reservations?phone=eq.${encodeURIComponent(phone)}&select=code,service,date,status&order=created_at.desc`);
+    const data = await sbRpc('find_reservations_by_phone', { p_phone: phone });
     const el = document.getElementById('phoneResult');
 
     if (!data || data.length === 0) {
@@ -426,13 +435,21 @@ async function searchByPhone() {
 }
 
 function useCode(code) {
+  const phone = document.getElementById('phoneInput').value.trim();
   switchTab('code');
   document.getElementById('codeInput').value = code;
+  document.getElementById('codePhoneInput').value = phone;
   searchByCode();
 }
 
 /* 연락처 자동 하이픈 */
 document.getElementById('phoneInput').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length < 4) e.target.value = v;
+  else if (v.length < 8) e.target.value = v.slice(0,3) + '-' + v.slice(3);
+  else e.target.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
+});
+document.getElementById('codePhoneInput').addEventListener('input', (e) => {
   let v = e.target.value.replace(/\D/g, '').slice(0, 11);
   if (v.length < 4) e.target.value = v;
   else if (v.length < 8) e.target.value = v.slice(0,3) + '-' + v.slice(3);
