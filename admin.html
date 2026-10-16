@@ -137,15 +137,15 @@ tr:hover td { background: #fdf9f6; }
     <div class="login-logo">Gini<span>Beauty</span></div>
     <p class="login-sub">관리자 전용 페이지</p>
     <div class="login-field">
-      <label>아이디</label>
-      <input type="text" id="loginId" placeholder="아이디 입력" />
+      <label>이메일</label>
+      <input type="email" id="loginId" autocomplete="username" placeholder="이메일 입력" onkeydown="if(event.key==='Enter') document.getElementById('loginPw').focus()" />
     </div>
     <div class="login-field">
       <label>비밀번호</label>
-      <input type="password" id="loginPw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter') doLogin()" />
+      <input type="password" id="loginPw" autocomplete="current-password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter') doLogin()" />
     </div>
-    <button class="login-btn" onclick="doLogin()">로그인</button>
-    <p class="login-error" id="loginError">아이디 또는 비밀번호가 올바르지 않습니다.</p>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">로그인</button>
+    <p class="login-error" id="loginError">이메일 또는 비밀번호가 올바르지 않습니다.</p>
   </div>
 </div>
 
@@ -154,7 +154,7 @@ tr:hover td { background: #fdf9f6; }
   <div class="header">
     <div class="header__logo">Gini<span>Beauty</span> <span style="font-size:.75rem;color:var(--ink-soft);font-family:var(--sans);font-style:normal;">관리자</span></div>
     <div class="header__right">
-      <span class="header__user">👤 admin</span>
+      <span class="header__user" id="headerUser">👤 관리자</span>
       <button class="header__logout" onclick="doLogout()">로그아웃</button>
     </div>
   </div>
@@ -265,45 +265,93 @@ tr:hover td { background: #fdf9f6; }
 <script>
 const SUPABASE_URL = 'https://dxnhcntvckhexyresxsv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_5fimW-Tc9PgTXt63n8ZQ8g_6QrEP_SG';
-const WEB3FORMS_KEY = '6114541f-3206-4da6-8c5b-606326dd5bfe';
-const ADMIN_ID = 'admin';
-const ADMIN_PW = 'Qwer213600!@';
+const SESSION_KEY = 'gb_admin_session';
 
 let allReservations = [];
 let editingCode = null;
 let calYear, calMonth;
 
-/* ── 로그인 ── */
-function doLogin() {
-  const id = document.getElementById('loginId').value.trim();
+/* ── 화면 출력용 이스케이프 : 고객이 입력한 값에 섞인 HTML/스크립트가 실행되지 않게 한다 ── */
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+/* onclick 속성에 들어가는 예약코드는 영문·숫자만 허용 */
+function safeCode(c) { return /^[A-Za-z0-9]+$/.test(String(c)) ? String(c) : ''; }
+
+/* ── 로그인 (Supabase Auth) : 비밀번호는 코드에 없고 Supabase 서버가 검사한다 ── */
+function saveSession(s) {
+  const session = { access_token: s.access_token, refresh_token: s.refresh_token, expires_at: Date.now() + (s.expires_in - 30) * 1000, email: (s.user && s.user.email) || '' };
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch {}
+  return session;
+}
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch { return null; }
+}
+async function authRequest(grantType, body) {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=${grantType}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('auth failed');
+  return res.json();
+}
+/* 만료가 가까우면 자동으로 갱신해서 항상 유효한 토큰을 돌려준다 */
+async function getToken() {
+  let s = loadSession();
+  if (!s) throw new Error('no session');
+  if (Date.now() >= s.expires_at) {
+    try { s = saveSession(await authRequest('refresh_token', { refresh_token: s.refresh_token })); }
+    catch { doLogout(); throw new Error('session expired'); }
+  }
+  return s.access_token;
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginId').value.trim();
   const pw = document.getElementById('loginPw').value;
-  if (id === ADMIN_ID && pw === ADMIN_PW) {
-    sessionStorage.setItem('gb_admin', '1');
-    document.getElementById('loginWrap').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    init();
-  } else {
-    document.getElementById('loginError').style.display = 'block';
+  const err = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  err.style.display = 'none';
+  if (!email || !pw) { err.textContent = '이메일과 비밀번호를 입력해 주세요.'; err.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = '로그인 중...';
+  try {
+    saveSession(await authRequest('password', { email, password: pw }));
+    document.getElementById('loginPw').value = '';
+    enterApp();
+  } catch {
+    err.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = '로그인';
   }
 }
 
 function doLogout() {
-  sessionStorage.removeItem('gb_admin');
+  const s = loadSession();
+  try { localStorage.removeItem(SESSION_KEY); } catch {}
+  if (s) { fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${s.access_token}` } }).catch(() => {}); }
   location.reload();
 }
 
-if (sessionStorage.getItem('gb_admin')) {
+function enterApp() {
+  const s = loadSession();
+  document.getElementById('headerUser').textContent = '👤 ' + (s && s.email ? s.email : '관리자');
   document.getElementById('loginWrap').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  init();
+  init().catch(() => {});
 }
 
-/* ── Supabase ── */
+if (loadSession()) enterApp();
+
+/* ── Supabase (로그인한 관리자의 토큰으로만 접근) ── */
 async function sbFetch(path, options = {}) {
+  const token = await getToken();
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, ...(options.headers || {}) },
   });
+  if (res.status === 401) { doLogout(); throw new Error('unauthorized'); }
   if (!res.ok) throw new Error(await res.text());
   const text = await res.text();
   return text ? JSON.parse(text) : null;
@@ -317,6 +365,11 @@ async function init() {
   const now = new Date();
   calYear = now.getFullYear(); calMonth = now.getMonth();
   renderCalendar();
+  /* 취소 요청 메일의 링크(admin.html#cancel)로 들어오면 취소 요청 목록을 바로 보여준다 */
+  if (location.hash === '#cancel') {
+    showTab('reservations');
+    filterReservations('cancel_requested', document.querySelectorAll('.filter-btn')[2]);
+  }
 }
 
 /* ── 방문 횟수 계산 (전화번호 기준, 취소 제외, 날짜순) ── */
@@ -378,9 +431,9 @@ function renderDashboard() {
   document.getElementById('cancelRequests').innerHTML = reqs.length === 0
     ? '<p class="empty-msg">취소 요청이 없습니다.</p>'
     : `<div class="table-wrap"><table><thead><tr><th>이름</th><th>연락처</th><th>시술</th><th>날짜</th><th>신청일</th><th>처리</th></tr></thead><tbody>${
-        reqs.map(r => `<tr><td>${r.name}</td><td>${r.phone}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td><td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td><td>
-          <button class="action-btn cancel" onclick="confirmCancel('${r.code}')">취소 확정</button>
-          <button class="action-btn edit" onclick="rejectCancel('${r.code}')">요청 거절</button>
+        reqs.map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.phone)}</td><td>${esc(r.service)}</td><td>${esc(fmtDate(r.date))}</td><td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td><td>
+          <button class="action-btn cancel" onclick="confirmCancel('${safeCode(r.code)}')">취소 확정</button>
+          <button class="action-btn edit" onclick="rejectCancel('${safeCode(r.code)}')">요청 거절</button>
         </td></tr>`).join('')
       }</tbody></table></div>`;
 
@@ -389,7 +442,7 @@ function renderDashboard() {
   document.getElementById('recentList').innerHTML = recent.length === 0
     ? '<p class="empty-msg">예약이 없습니다.</p>'
     : `<div class="table-wrap"><table><thead><tr><th>이름</th><th>시술</th><th>날짜</th><th>신청일</th><th>상태</th></tr></thead><tbody>${
-        recent.map(r => `<tr><td>${r.name}${visitBadge(r)}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td><td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td><td>${statusLabel(r.status)}</td></tr>`).join('')
+        recent.map(r => `<tr><td>${esc(r.name)}${visitBadge(r)}</td><td>${esc(r.service)}</td><td>${esc(fmtDate(r.date))}</td><td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td><td>${statusLabel(r.status)}</td></tr>`).join('')
       }</tbody></table></div>`;
 
   /* 취소요청 뱃지 */
@@ -403,13 +456,13 @@ function renderTable(filter) {
   document.getElementById('reservationTable').innerHTML = data.length === 0
     ? `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--ink-soft);">예약이 없습니다.</td></tr>`
     : data.map(r => `<tr>
-        <td style="font-size:.78rem;color:var(--ink-soft);">${r.code}</td>
-        <td>${r.name}${visitBadge(r)}</td><td>${r.phone}</td><td>${r.service}</td><td>${fmtDate(r.date)}</td>
+        <td style="font-size:.78rem;color:var(--ink-soft);">${esc(r.code)}</td>
+        <td>${esc(r.name)}${visitBadge(r)}</td><td>${esc(r.phone)}</td><td>${esc(r.service)}</td><td>${esc(fmtDate(r.date))}</td>
         <td style="font-size:.78rem;">${r.created_at ? new Date(r.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-'}</td>
         <td>${statusLabel(r.status)}</td>
         <td>
-          ${r.status !== 'cancelled' ? `<button class="action-btn edit" onclick="openModal('${r.code}')">수정</button>` : ''}
-          ${r.status !== 'cancelled' ? `<button class="action-btn cancel" onclick="confirmCancel('${r.code}')">취소</button>` : ''}
+          ${r.status !== 'cancelled' ? `<button class="action-btn edit" onclick="openModal('${safeCode(r.code)}')">수정</button>` : ''}
+          ${r.status !== 'cancelled' ? `<button class="action-btn cancel" onclick="confirmCancel('${safeCode(r.code)}')">취소</button>` : ''}
         </td>
       </tr>`).join('');
 }
@@ -569,7 +622,7 @@ function showCalDetail(dateStr) {
   document.getElementById('calDetailTitle').textContent = `${y}년 ${m}월 ${d}일 예약 ${list.length}건`;
   document.getElementById('calDetailList').innerHTML = list.length === 0
     ? '<p style="color:var(--ink-soft);font-size:.88rem;padding:8px 0;">이 날 예약이 없습니다.</p>'
-    : list.map(r => `<div class="cal-item"><span>${r.time ? r.time + ' · ' : ''}${r.name}${visitBadge(r)} · ${r.service} · ${r.phone}</span>${statusLabel(r.status)}</div>`).join('');
+    : list.map(r => `<div class="cal-item"><span>${r.time ? esc(r.time) + ' · ' : ''}${esc(r.name)}${visitBadge(r)} · ${esc(r.service)} · ${esc(r.phone)}</span>${statusLabel(r.status)}</div>`).join('');
   detail.classList.add('show');
 }
 
