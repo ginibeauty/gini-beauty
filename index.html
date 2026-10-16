@@ -233,7 +233,7 @@ ul { list-style: none; }
               url("https://images.unsplash.com/photo-1526413232644-8a40f03cc03b?w=1600&h=2000&fit=crop&auto=format&q=80") center/cover no-repeat;
 }
 /* 작은 화면에서는 살짝 더 어둡게 (텍스트 가독성) */
-.hero__inner { color: var(--white); max-width: 600px; padding: 110px 0 60px; }
+.hero__inner { color: var(--white); max-width: 760px; padding: 110px 0 60px; }
 .hero__eyebrow {
   font-family: var(--serif); font-style: italic; font-size: 1.05rem;
   letter-spacing: 0.06em; color: #F0DCD2; margin-bottom: 18px;
@@ -241,11 +241,13 @@ ul { list-style: none; }
 .hero__title {
   font-family: var(--serif); font-weight: 500;
   font-size: clamp(3rem, 11vw, 6rem); line-height: 1.02; letter-spacing: 0.01em;
+  word-break: keep-all; /* 한글을 글자 중간이 아니라 단어 단위로 줄바꿈 */
 }
 .hero__title em { font-style: italic; color: #E9C7B8; }
 .hero__slogan {
   margin: 26px 0 38px; font-size: clamp(1rem, 3.6vw, 1.2rem);
   font-weight: 300; max-width: 440px; color: rgba(255,255,255,.92);
+  word-break: keep-all;
 }
 .hero__actions { display: flex; flex-wrap: wrap; gap: 14px; }
 .hero .btn-outline { border-color: rgba(255,255,255,.7); color: var(--white); }
